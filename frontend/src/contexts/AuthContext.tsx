@@ -39,7 +39,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    loadAuth();
+    loadAuth().catch(err => {
+      console.error('Error in loadAuth:', err);
+      setIsLoading(false);
+    });
   }, []);
 
   const loadAuth = async () => {
