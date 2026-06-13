@@ -1,24 +1,14 @@
 package com.rtsoft.growtopia
 
-import android.os.Bundle
-import androidx.appcompat.app.AppCompatActivity
-import com.gentz.launcher.databinding.ActivityGrowtopiaMainBinding
+import android.app.NativeActivity
 
-class Main : AppCompatActivity() {
-    private lateinit var binding: ActivityGrowtopiaMainBinding
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        binding = ActivityGrowtopiaMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-
-        val loaded = runCatching { System.loadLibrary("growtopia") }.isSuccess
-        val version = intent.getStringExtra("growtopia_version").orEmpty()
-        val role = intent.getStringExtra("user_role").orEmpty()
-        binding.gameStatus.text = if (loaded) {
-            "libgrowtopia.so loaded\n$version\n$role"
-        } else {
-            "Waiting for packaged native libraries in jniLibs/arm64-v8a"
-        }
-    }
-}
+/**
+ * Hosts the packaged Growtopia native engine.
+ *
+ * Extending [NativeActivity] lets Android's native activity glue load
+ * libgrowtopia.so (declared via the android.app.lib_name meta-data in the
+ * manifest) and invoke its ANativeActivity_onCreate entry point, which starts
+ * the game. A plain Activity that only calls System.loadLibrary never runs the
+ * native entry point, so the game never starts.
+ */
+class Main : NativeActivity()
