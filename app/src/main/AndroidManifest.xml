@@ -43,11 +43,8 @@
             android:hardwareAccelerated="true"
             android:launchMode="singleTask"
             android:screenOrientation="sensorLandscape"
-            android:theme="@style/Theme.Growlauncher.Game">
-            <meta-data
-                android:name="android.app.lib_name"
-                android:value="growtopia" />
-        </activity>
+            android:windowSoftInputMode="adjustNothing"
+            android:theme="@style/Theme.Growlauncher.Game" />
 
         <service
             android:name="com.rtsoft.growtopia.GrowtopiaBackgroundService"
