@@ -16,6 +16,11 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.BLUETOOTH" />
 
+    <!-- Required on Android 11+ to query the official Growtopia APK for game assets -->
+    <queries>
+        <package android:name="com.rtsoft.growtopia" />
+    </queries>
+
     <application
         android:name="launcher.powerkuy.App"
         android:allowBackup="true"
