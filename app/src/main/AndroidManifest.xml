@@ -2,11 +2,19 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.gentz.launcher">
 
+    <uses-feature android:glEsVersion="0x20000" android:required="true" />
+
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.BLUETOOTH" />
 
     <application
         android:allowBackup="true"
@@ -38,13 +46,41 @@
 
         <activity
             android:name="com.rtsoft.growtopia.Main"
-            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|screenLayout|density|uiMode"
-            android:exported="false"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="true"
             android:hardwareAccelerated="true"
             android:launchMode="singleTask"
             android:screenOrientation="sensorLandscape"
             android:windowSoftInputMode="adjustNothing"
-            android:theme="@style/Theme.Growlauncher.Game" />
+            android:theme="@style/Theme.Growlauncher.Game">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="grow" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name="com.rtsoft.growtopia.HelpshiftActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:screenOrientation="sensorLandscape"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:windowSoftInputMode="adjustNothing" />
+
+        <activity
+            android:name="com.rtsoft.growtopia.PermissionActivity"
+            android:screenOrientation="sensorLandscape"
+            android:configChanges="keyboardHidden|orientation|screenSize" />
+
+        <activity
+            android:name="com.rtsoft.growtopia.CSTSWebViewActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:screenOrientation="sensorLandscape"
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@android:style/Theme.NoTitleBar" />
 
         <service
             android:name="com.rtsoft.growtopia.GrowtopiaBackgroundService"
