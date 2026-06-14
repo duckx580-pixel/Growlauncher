@@ -263,10 +263,16 @@ public class SharedActivity extends ComponentActivity implements SensorEventList
 
     public static String get_apkFileName() {
         try {
-            return app.getPackageManager().getApplicationInfo(app.getPackageName(), 0).sourceDir;
+            // Try official Growtopia APK first (has full game assets)
+            return app.getPackageManager().getApplicationInfo(PackageName, 0).sourceDir;
         } catch (PackageManager.NameNotFoundException e) {
-            e.printStackTrace();
-            throw new RuntimeException("Unable to locate assets, aborting...");
+            // Fall back to our own APK if official Growtopia is not installed
+            try {
+                return app.getPackageManager().getApplicationInfo(app.getPackageName(), 0).sourceDir;
+            } catch (PackageManager.NameNotFoundException e2) {
+                e2.printStackTrace();
+                throw new RuntimeException("Unable to locate assets, aborting...");
+            }
         }
     }
 
@@ -669,7 +675,13 @@ public class SharedActivity extends ComponentActivity implements SensorEventList
 
     public void sendVersionDetails() {
         try {
-            nativeSendGUIStringEx(47, 0, 0, 0, getPackageManager().getPackageInfo(BuildConfig.APPLICATION_ID, 0).versionName);
+            String versionName;
+            try {
+                versionName = getPackageManager().getPackageInfo("com.rtsoft.growtopia", 0).versionName;
+            } catch (Exception e2) {
+                versionName = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+            }
+            nativeSendGUIStringEx(47, 0, 0, 0, versionName);
         } catch (Exception e) {
             Log.e(PackageName, "sendVersionDetails error: " + e.getMessage());
         }
