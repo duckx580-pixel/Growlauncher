@@ -263,7 +263,7 @@ public class SharedActivity extends ComponentActivity implements SensorEventList
 
     public static String get_apkFileName() {
         try {
-            return app.getPackageManager().getApplicationInfo(PackageName, 0).sourceDir;
+            return app.getPackageManager().getApplicationInfo(app.getPackageName(), 0).sourceDir;
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
             throw new RuntimeException("Unable to locate assets, aborting...");
