@@ -3,5 +3,14 @@ package com.rtsoft.growtopia;
 import android.app.Activity;
 
 public class GoogleSignInHelper {
-    public GoogleSignInHelper(Activity activity) {}
+    Activity mainActivity;
+
+    public GoogleSignInHelper(Activity activity) {
+        this.mainActivity = activity;
+    }
+
+    public native void OnSignIn(int code, String token);
+
+    public void SignIn() {}
+    public void SignOut() {}
 }
