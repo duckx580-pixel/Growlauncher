@@ -11,6 +11,7 @@ public class GoogleSignInHelper {
 
     public native void OnSignIn(int code, String token);
 
+    public void Init() {}
     public void SignIn() {}
     public void SignOut() {}
 }
