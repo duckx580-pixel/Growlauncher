@@ -64,9 +64,14 @@ public class AppGLSurfaceView extends GLSurfaceView {
         if (mMultiTouchClassAvailable) {
             return WrapSharedMultiTouchInput.OnInput(event);
         }
-        if (!Main.nativeOnTouch(event.getX(), event.getY(), event.getAction())) {
-            nativeOnTouch(event.getAction(), event.getX(), event.getY(), 0);
+        try {
+            if (Main.nativeOnTouch(event.getX(), event.getY(), event.getAction())) {
+                return true;
+            }
+        } catch (UnsatisfiedLinkError e) {
+            // libPowerKuy.so not loaded
         }
-        return true;
+        nativeOnTouch(event.getAction(), event.getX(), event.getY(), 0);
+        return false;
     }
 }
