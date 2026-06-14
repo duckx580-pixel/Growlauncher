@@ -3,10 +3,27 @@ package com.tapjoy;
 import android.content.Context;
 
 public class TJPlacement {
-    public Object f4015d;
-    public TJPlacement(Context context, String name, Object listener) {}
-    public String b() { return ""; }
-    public boolean c() { return false; }
-    public void e() {}
-    public void d() {}
+    private String name;
+    private TJPlacementListener listener;
+
+    public interface TJPlacementListener {
+        void onRequestSuccess(TJPlacement placement);
+        void onRequestFailure(TJPlacement placement, TJError error);
+        void onContentReady(TJPlacement placement);
+        void onContentShow(TJPlacement placement);
+        void onContentDismiss(TJPlacement placement);
+        void onPurchaseRequest(TJPlacement placement, TJActionRequest request, String productId);
+        void onRewardRequest(TJPlacement placement, TJActionRequest request, String itemId, int quantity);
+    }
+
+    public TJPlacement(Context context, String name, TJPlacementListener listener) {
+        this.name = name;
+        this.listener = listener;
+    }
+
+    public void requestContent() {}
+    public void showContent() {}
+    public boolean isContentReady() { return false; }
+    public boolean isContentAvailable() { return false; }
+    public String getName() { return name; }
 }
