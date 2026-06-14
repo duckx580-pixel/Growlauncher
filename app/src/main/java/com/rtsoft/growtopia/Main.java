@@ -173,6 +173,7 @@ public class Main extends SharedActivity {
         SharedActivity.IAPEnabled = true;
         SharedActivity.HookedEnabled = false;
         SharedActivity.PackageName = BuildConfig.APPLICATION_ID;
+        this.usercentricsManager = new UsercentricsManager(this);
         System.loadLibrary("growtopia");
 
         super.onCreate(savedInstanceState);
@@ -191,7 +192,6 @@ public class Main extends SharedActivity {
         });
 
         initialize(savedInstanceState);
-        this.usercentricsManager = new UsercentricsManager(this);
         getWindow().addFlags(128); // FLAG_KEEP_SCREEN_ON
 
         applyImmersiveFullscreen();
