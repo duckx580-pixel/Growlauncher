@@ -2,83 +2,71 @@ package com.rtsoft.growtopia;
 
 import android.content.Context;
 import android.opengl.GLSurfaceView;
+import android.util.Log;
 import android.view.MotionEvent;
 
-/**
- * OpenGL ES surface that drives the Proton engine.
- *
- * It installs an {@link AppRenderer} (which calls the native render loop) and
- * forwards multi-touch input to the engine via SharedActivity.nativeSendGUIEx
- * on the GL thread, matching the engine's expected message protocol.
- */
 public class AppGLSurfaceView extends GLSurfaceView {
-    private final AppRenderer mRenderer;
-    private final SharedActivity mActivity;
+    private static boolean mMultiTouchClassAvailable;
+    public static AppRenderer mRenderer;
+    public SharedActivity app;
 
     public AppGLSurfaceView(Context context, SharedActivity activity) {
         super(context);
-        mActivity = activity;
-
         setEGLContextClientVersion(2);
-        setEGLConfigChooser(8, 8, 8, 8, 16, 0);
+        setSystemUiVisibility(260);
+        this.app = activity;
+        if (SharedActivity.m_editText != null) {
+            Log.d(SharedActivity.PackageName, "Setting focus options...");
+            setFocusable(true);
+            setFocusableInTouchMode(true);
+            requestFocus();
+        }
+        setEGLConfigChooser(8, 8, 8, 8, 24, 8);
         setPreserveEGLContextOnPause(true);
+        AppRenderer renderer = new AppRenderer(this.app);
+        try {
+            setRenderer(renderer);
+            mRenderer = renderer;
+            setRenderMode(RENDERMODE_CONTINUOUSLY);
+        } catch (Exception e) {
+            Log.e(SharedActivity.PackageName, "setRenderer failed: " + e.getMessage());
+        }
+        try {
+            WrapSharedMultiTouchInput.checkAvailable(this.app);
+            mMultiTouchClassAvailable = true;
+        } catch (Throwable t) {
+            mMultiTouchClassAvailable = false;
+        }
+    }
 
-        mRenderer = new AppRenderer(activity);
-        setRenderer(mRenderer);
-        setRenderMode(RENDERMODE_CONTINUOUSLY);
+    public static native void nativeOnTouch(int action, float x, float y, int finger);
+    public static native void nativePause();
+    public static native void nativeResume();
 
-        setFocusable(true);
-        setFocusableInTouchMode(true);
+    @Override
+    public void onPause() {
+        super.onPause();
+        if (SharedActivity.bIsShuttingDown) return;
+        nativePause();
     }
 
     @Override
-    public boolean onTouchEvent(final MotionEvent event) {
-        final int action = event.getActionMasked();
-        final int pointerIndex = event.getActionIndex();
-        final int pointerId = event.getPointerId(pointerIndex);
-        final int pointerCount = event.getPointerCount();
+    public void onResume() {
+        super.onResume();
+        if (SharedActivity.bIsShuttingDown) return;
+        try { setSystemUiVisibility(260); } catch (Exception e) {}
+        nativeResume();
+    }
 
-        // Snapshot coordinates because MotionEvent is recycled off the UI thread.
-        final float[] xs = new float[pointerCount];
-        final float[] ys = new float[pointerCount];
-        final int[] ids = new int[pointerCount];
-        for (int i = 0; i < pointerCount; i++) {
-            xs[i] = event.getX(i);
-            ys[i] = event.getY(i);
-            ids[i] = event.getPointerId(i);
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        super.onTouchEvent(event);
+        if (mMultiTouchClassAvailable) {
+            return WrapSharedMultiTouchInput.OnInput(event);
         }
-        final float downX = event.getX(pointerIndex);
-        final float downY = event.getY(pointerIndex);
-
-        queueEvent(new Runnable() {
-            @Override
-            public void run() {
-                switch (action) {
-                    case MotionEvent.ACTION_DOWN:
-                    case MotionEvent.ACTION_POINTER_DOWN:
-                        SharedActivity.nativeSendGUIEx(
-                                SharedActivity.MESSAGE_TYPE_GUI_CLICK_START,
-                                (int) downX, (int) downY, pointerId);
-                        break;
-                    case MotionEvent.ACTION_UP:
-                    case MotionEvent.ACTION_POINTER_UP:
-                    case MotionEvent.ACTION_CANCEL:
-                        SharedActivity.nativeSendGUIEx(
-                                SharedActivity.MESSAGE_TYPE_GUI_CLICK_END,
-                                (int) downX, (int) downY, pointerId);
-                        break;
-                    case MotionEvent.ACTION_MOVE:
-                        for (int i = 0; i < xs.length; i++) {
-                            SharedActivity.nativeSendGUIEx(
-                                    SharedActivity.MESSAGE_TYPE_GUI_CLICK_MOVE,
-                                    (int) xs[i], (int) ys[i], ids[i]);
-                        }
-                        break;
-                    default:
-                        break;
-                }
-            }
-        });
+        if (!Main.nativeOnTouch(event.getX(), event.getY(), event.getAction())) {
+            nativeOnTouch(event.getAction(), event.getX(), event.getY(), 0);
+        }
         return true;
     }
 }
