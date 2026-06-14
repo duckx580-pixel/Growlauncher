@@ -15,6 +15,7 @@ import android.view.WindowInsetsController;
 import android.view.inputmethod.InputMethodManager;
 
 import com.rtsoft.growtopia.HeightProvider;
+import com.ubisoft.bridge.a;
 
 import launcher.powerkuy.growlauncher.api.JNICall;
 import launcher.powerkuy.growlauncher.api.JavaForNative;
@@ -185,6 +186,8 @@ public class Main extends SharedActivity {
             config.screenWidthDp = h;
             getResources().updateConfiguration(config, getResources().getDisplayMetrics());
         }
+
+        a.a(this); // Ubisoft bridge init (matching real Growlauncher)
 
         this.heightProvider = new HeightProvider(this).setHeightListener(height -> {
             OnKeyboardHeightChanged(height);
