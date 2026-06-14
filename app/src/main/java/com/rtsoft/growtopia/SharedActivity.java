@@ -185,7 +185,7 @@ public class SharedActivity extends ComponentActivity implements SensorEventList
     public TJPlacement offerwallPlacement;
     public TJPlacement tapjoyAdPlacementForSub01;
     public TJPlacement tapjoyAdPlacementForTV;
-    public IAPManager iapManager = null;
+    public IAPManager iapManager = new IAPManager(null);
     public boolean is_demo = false;
     public String BASE64_PUBLIC_KEY = "this will be set in your app's Main.java";
     public MediaPlayer _music = null;

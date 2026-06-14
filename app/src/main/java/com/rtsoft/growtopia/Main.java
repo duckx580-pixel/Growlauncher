@@ -44,10 +44,6 @@ public class Main extends SharedActivity {
     public MAFManager mafManager = new MAFManager(this);
     public UsercentricsManager usercentricsManager = null;
 
-    static {
-        System.loadLibrary("growtopia");
-    }
-
     // === Static getters the native engine calls via JNI ===
     public static AppReviewManager GetAppReviewManager() { return mainApp.appReviewManager; }
     public static AppsFlyerManager GetAppsflyerManager() { return mainApp.appsflyerManager; }
@@ -57,7 +53,10 @@ public class Main extends SharedActivity {
     public static Object GetHelpShiftManager() { return helpshiftManager; }
     public static Object GetIronSourceManager() { return mainApp.ironSourceManager; }
     public static MAFManager GetMAFManager() { return mainApp.mafManager; }
-    public static UsercentricsManager GetUsercentricsManager() { return mainApp.usercentricsManager; }
+    public static UsercentricsManager GetUsercentricsManager() {
+        if (mainApp == null || mainApp.usercentricsManager == null) return new UsercentricsManager(null);
+        return mainApp.usercentricsManager;
+    }
     public static WebViewManager GetWebViewManager() { return mainApp.webViewManager; }
 
     public static boolean HandleDeeplink(Intent intent) {
