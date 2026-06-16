@@ -51,11 +51,10 @@ public class Main extends SharedActivity {
     public static FirebaseCloudMessageManager GetFirebaseCloudMessageManager() { return mainApp.firebaseCloudMessageManager; }
     public static FirebaseCrashlyticsManager GetFirebaseCrashlyticsManager() { return new FirebaseCrashlyticsManager(); }
     public static GoogleSignInHelper GetGoogleSignInHelper() { return mainApp.googleSignInHelper; }
-    public static HelpShiftManager GetHelpShiftManager() { return helpshiftManager; }
-    public static IronSourceManager GetIronSourceManager() { return mainApp.ironSourceManager; }
+    public static Object GetHelpShiftManager() { return helpshiftManager; }
+    public static Object GetIronSourceManager() { return mainApp.ironSourceManager; }
     public static MAFManager GetMAFManager() { return mainApp.mafManager; }
     public static UsercentricsManager GetUsercentricsManager() {
-        if (mainApp == null || mainApp.usercentricsManager == null) return new UsercentricsManager(null);
         return mainApp.usercentricsManager;
     }
     public static WebViewManager GetWebViewManager() { return mainApp.webViewManager; }
@@ -173,7 +172,6 @@ public class Main extends SharedActivity {
         SharedActivity.IAPEnabled = true;
         SharedActivity.HookedEnabled = false;
         SharedActivity.PackageName = BuildConfig.APPLICATION_ID;
-        this.usercentricsManager = new UsercentricsManager(this);
         System.loadLibrary("growtopia");
 
         super.onCreate(savedInstanceState);
@@ -187,13 +185,14 @@ public class Main extends SharedActivity {
             getResources().updateConfiguration(config, getResources().getDisplayMetrics());
         }
 
-        a.a(this); // Ubisoft bridge init (matching real Growlauncher)
+        a.a(this); // Ubisoft bridge init
 
         this.heightProvider = new HeightProvider(this).setHeightListener(height -> {
             OnKeyboardHeightChanged(height);
         });
 
         initialize(savedInstanceState);
+        this.usercentricsManager = new UsercentricsManager(this);
         getWindow().addFlags(128); // FLAG_KEEP_SCREEN_ON
 
         applyImmersiveFullscreen();
