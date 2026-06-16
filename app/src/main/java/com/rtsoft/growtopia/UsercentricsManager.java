@@ -34,4 +34,13 @@ public class UsercentricsManager {
 
     public void InitWithSettings(String str) {
     }
+
+    // Stubs needed by official libgrowtopia.so consent processing flow.
+    // The native OnConsentFetchedSuccess caches these method IDs; without
+    // them GetMethodID returns NULL → SIGSEGV.
+    public void SetAge(int age) {}
+    public void SetCMPAge(int age) {}
+    public void SetABTestingVariant(String variant) {}
+    public boolean IsReady() { return true; }
+    public String GetConsentStatus() { return ""; }
 }
