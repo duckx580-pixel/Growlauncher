@@ -47,7 +47,7 @@ public class Main extends SharedActivity {
     public IronSourceManager ironSourceManager = new IronSourceManager(this);
     public WebViewManager webViewManager = new WebViewManager(this);
     public AppReviewManager appReviewManager = new AppReviewManager(this);
-    public FirebaseCrashlyticsManager firebaseCrashlyticsManager = new FirebaseCrashlyticsManager();
+    public FirebaseCrashlyticsManager firebaseCrashlyticsManager;
     public FirebaseCloudMessageManager firebaseCloudMessageManager = new FirebaseCloudMessageManager();
     public GoogleSignInHelper googleSignInHelper = new GoogleSignInHelper(this);
     public MAFManager mafManager = new MAFManager(this);
@@ -57,7 +57,7 @@ public class Main extends SharedActivity {
     public static AppReviewManager GetAppReviewManager() { return mainApp.appReviewManager; }
     public static AppsFlyerManager GetAppsflyerManager() { return mainApp.appsflyerManager; }
     public static FirebaseCloudMessageManager GetFirebaseCloudMessageManager() { return mainApp.firebaseCloudMessageManager; }
-    public static FirebaseCrashlyticsManager GetFirebaseCrashlyticsManager() { return new FirebaseCrashlyticsManager(); }
+    public static FirebaseCrashlyticsManager GetFirebaseCrashlyticsManager() { return mainApp.firebaseCrashlyticsManager; }
     public static GoogleSignInHelper GetGoogleSignInHelper() { return mainApp.googleSignInHelper; }
     public static Object GetHelpShiftManager() { return helpshiftManager; }
     public static Object GetIronSourceManager() { return mainApp.ironSourceManager; }
@@ -210,6 +210,7 @@ public class Main extends SharedActivity {
             OnKeyboardHeightChanged(height);
         });
 
+        this.firebaseCrashlyticsManager = new FirebaseCrashlyticsManager(this);
         initialize(savedInstanceState);
         this.usercentricsManager = new UsercentricsManager(this);
         getWindow().addFlags(128); // FLAG_KEEP_SCREEN_ON
