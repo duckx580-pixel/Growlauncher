@@ -66,4 +66,9 @@ public class UsercentricsManager {
     public void ShowConsentSettings() {}
     public void InitWithRuleSet(String ruleSet) {}
     public void InitWithSettings(String settings) {}
+    public void SetAge(int age) {}
+    public void SetCMPAge(int age) {}
+    public void SetABTestingVariant(String variant) {}
+    public boolean IsReady() { return true; }
+    public String GetConsentStatus() { return ""; }
 }

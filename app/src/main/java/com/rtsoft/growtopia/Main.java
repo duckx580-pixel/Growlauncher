@@ -51,8 +51,8 @@ public class Main extends SharedActivity {
     public static FirebaseCloudMessageManager GetFirebaseCloudMessageManager() { return mainApp.firebaseCloudMessageManager; }
     public static FirebaseCrashlyticsManager GetFirebaseCrashlyticsManager() { return new FirebaseCrashlyticsManager(); }
     public static GoogleSignInHelper GetGoogleSignInHelper() { return mainApp.googleSignInHelper; }
-    public static Object GetHelpShiftManager() { return helpshiftManager; }
-    public static Object GetIronSourceManager() { return mainApp.ironSourceManager; }
+    public static HelpShiftManager GetHelpShiftManager() { return helpshiftManager; }
+    public static IronSourceManager GetIronSourceManager() { return mainApp.ironSourceManager; }
     public static MAFManager GetMAFManager() { return mainApp.mafManager; }
     public static UsercentricsManager GetUsercentricsManager() {
         if (mainApp == null || mainApp.usercentricsManager == null) return new UsercentricsManager(null);
