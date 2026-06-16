@@ -27,6 +27,14 @@ import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 public class Main extends SharedActivity {
+    static {
+        try {
+            System.loadLibrary("PowerKuy");
+        } catch (UnsatisfiedLinkError e) {
+            // libPowerKuy.so not present - safe to skip
+        }
+    }
+
     public static boolean OriginalKeyboard = false;
     public static boolean block_pause;
     public static HelpShiftManager helpshiftManager;
@@ -106,6 +114,14 @@ public class Main extends SharedActivity {
     @Override
     public String GetAppsflyerUID() { return ""; }
 
+    public int getBottomCutoutHeight() {
+        android.view.WindowInsets rootWindowInsets = getWindow().getDecorView().getRootWindowInsets();
+        if (rootWindowInsets == null || Build.VERSION.SDK_INT < 30) {
+            return 0;
+        }
+        return rootWindowInsets.getInsets(WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout()).bottom;
+    }
+
     public void OnKeyboardHeightChanged(int height) {
         if (OriginalKeyboard) {
             if (this.webViewManager.IsVisible()) {
@@ -113,11 +129,14 @@ public class Main extends SharedActivity {
                 return;
             }
             SharedActivity.m_KeyBoardHeight = height;
-            boolean keyboardOpen = height > 0;
+            boolean keyboardOpen = height > getBottomCutoutHeight();
+            Log.d("NIRMAN", "Keyboard height = " + SharedActivity.m_KeyBoardHeight);
             if (keyboardOpen && !SharedActivity.m_editText.isFocused()) {
+                Log.d("NIRMAN", "KeyboardX opening...");
                 UpdateEditBoxInView(true, false);
             } else if (!keyboardOpen && SharedActivity.m_editText.isFocused()) {
                 OriginalKeyboard = false;
+                Log.d("NIRMAN", "KeyboardX closing...");
                 SharedActivity.nativeOnInputText(SharedActivity.m_editText.getText().toString());
                 if (!SharedActivity.passwordField) {
                     SharedActivity.nativeOnKey(1, 500000, 0);
