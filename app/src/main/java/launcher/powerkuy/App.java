@@ -6,6 +6,9 @@ import android.content.SharedPreferences;
 import android.content.res.AssetManager;
 import android.provider.Settings;
 
+import com.gentz.launcher.logging.CrashLogger;
+import com.gentz.launcher.logging.FileLogger;
+
 import java.util.UUID;
 
 public class App extends Application {
@@ -17,6 +20,8 @@ public class App extends Application {
         super.onCreate();
         f10088p = this;
         prefs = getSharedPreferences("powerkuy_data", Context.MODE_PRIVATE);
+        CrashLogger.init(this);
+        FileLogger.log(this, "Application started");
     }
 
     public static AssetManager a() {
