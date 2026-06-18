@@ -8,6 +8,7 @@ import java.util.Locale
 
 object FileLogger {
     private const val LOG_FILE_NAME = "app_debug_logs.txt"
+    private const val MAX_LOG_SIZE_BYTES = 2L * 1024L * 1024L
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US)
 
     private fun getLogFile(context: Context): File {
@@ -19,8 +20,7 @@ object FileLogger {
     @Synchronized
     fun log(context: Context, message: String) {
         runCatching {
-            val line = "[${dateFormat.format(Date())}] $message\n"
-            getLogFile(context).appendText(line)
+            appendLine(context, "[${dateFormat.format(Date())}] $message\n")
         }
     }
 
@@ -33,7 +33,23 @@ object FileLogger {
                 append(throwable.stackTraceToString())
                 append("\n\n")
             }
-            getLogFile(context).appendText(text)
+            appendLine(context, text)
         }
+    }
+
+    @JvmStatic
+    @Synchronized
+    fun logRaw(context: Context, message: String) {
+        runCatching {
+            appendLine(context, "$message\n")
+        }
+    }
+
+    private fun appendLine(context: Context, text: String) {
+        val file = getLogFile(context)
+        if (file.exists() && file.length() >= MAX_LOG_SIZE_BYTES) {
+            file.writeText("[${dateFormat.format(Date())}] Log rotated (size limit reached)\n")
+        }
+        file.appendText(text)
     }
 }

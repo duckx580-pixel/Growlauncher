@@ -8,6 +8,7 @@ import android.provider.Settings;
 
 import com.gentz.launcher.logging.CrashLogger;
 import com.gentz.launcher.logging.FileLogger;
+import com.gentz.launcher.logging.LogcatCapture;
 
 import java.util.UUID;
 
@@ -22,6 +23,7 @@ public class App extends Application {
         prefs = getSharedPreferences("powerkuy_data", Context.MODE_PRIVATE);
         CrashLogger.init(this);
         FileLogger.log(this, "Application started");
+        LogcatCapture.start(this);
     }
 
     public static AssetManager a() {
