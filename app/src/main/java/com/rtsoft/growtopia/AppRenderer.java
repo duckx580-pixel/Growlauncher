@@ -67,6 +67,7 @@ public class AppRenderer implements GLSurfaceView.Renderer {
     public SharedActivity app;
     int width;
     int height;
+    private boolean nativeInitialized;
 
     public AppRenderer(SharedActivity activity) {
         this.app = activity;
@@ -191,5 +192,9 @@ public class AppRenderer implements GLSurfaceView.Renderer {
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         GLES20.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         nativeSetWindow(SharedActivity.mGLView.getHolder().getSurface());
+        if (!nativeInitialized) {
+            nativeInit();
+            nativeInitialized = true;
+        }
     }
 }
