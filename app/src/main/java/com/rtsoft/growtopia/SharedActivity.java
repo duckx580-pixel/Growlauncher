@@ -111,7 +111,8 @@ public class SharedActivity extends ComponentActivity implements SensorEventList
     static final int MESSAGE_TYPE_UNKNOWN = 21;
     static final int MESSAGE_TYPE_VIBRATE = 16;
     static final int MESSAGE_USER = 1000;
-    public static String PackageName = "com.rtsoft.growtopia";
+    private static final String OFFICIAL_GROWTOPIA_PACKAGE = "com.rtsoft.growtopia";
+    public static String PackageName = OFFICIAL_GROWTOPIA_PACKAGE;
     static final int RC_REQUEST = 10001;
     static final int RESULT_BILLING_UNAVAILABLE = 3;
     static final int RESULT_DEVELOPER_ERROR = 5;
@@ -264,9 +265,15 @@ public class SharedActivity extends ComponentActivity implements SensorEventList
     public static String get_apkFileName() {
         try {
             // Try official Growtopia APK first (has full game assets)
-            return app.getPackageManager().getApplicationInfo(PackageName, 0).sourceDir;
+            return app.getPackageManager().getApplicationInfo(OFFICIAL_GROWTOPIA_PACKAGE, 0).sourceDir;
         } catch (PackageManager.NameNotFoundException e) {
-            // Fall back to our own APK if official Growtopia is not installed
+            // Fall back to configured package and then to our own APK
+            if (PackageName != null && PackageName.length() > 0 && !OFFICIAL_GROWTOPIA_PACKAGE.equals(PackageName)) {
+                try {
+                    return app.getPackageManager().getApplicationInfo(PackageName, 0).sourceDir;
+                } catch (PackageManager.NameNotFoundException ignored) {
+                }
+            }
             try {
                 return app.getPackageManager().getApplicationInfo(app.getPackageName(), 0).sourceDir;
             } catch (PackageManager.NameNotFoundException e2) {

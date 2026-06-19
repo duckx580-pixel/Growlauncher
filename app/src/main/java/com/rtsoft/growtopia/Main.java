@@ -190,7 +190,7 @@ public class Main extends SharedActivity {
         SharedActivity.securityEnabled = false;
         SharedActivity.IAPEnabled = true;
         SharedActivity.HookedEnabled = false;
-        SharedActivity.PackageName = BuildConfig.APPLICATION_ID;
+        SharedActivity.PackageName = "com.rtsoft.growtopia";
         System.loadLibrary("growtopia");
 
         super.onCreate(savedInstanceState);
