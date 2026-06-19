@@ -8,7 +8,7 @@ import java.util.Locale
 
 object FileLogger {
     private const val LOG_FILE_NAME = "app_debug_logs.txt"
-    private const val MAX_LOG_SIZE_BYTES = 2L * 1024L * 1024L
+    private const val MAX_LOG_SIZE_BYTES = 20L * 1024L * 1024L
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US)
 
     private fun getLogFile(context: Context): File {

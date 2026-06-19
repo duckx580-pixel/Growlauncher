@@ -1,7 +1,6 @@
 package com.gentz.launcher.logging
 
 import android.content.Context
-import android.os.Process
 import kotlin.concurrent.thread
 
 object LogcatCapture {
@@ -20,13 +19,13 @@ object LogcatCapture {
         val appContext = context.applicationContext
         thread(start = true, isDaemon = true, name = "logcat-file-capture") {
             runCatching {
-                val pid = Process.myPid()
-                FileLogger.log(appContext, "Starting logcat capture for pid=$pid")
+                FileLogger.log(appContext, "Starting full logcat capture")
                 val process = ProcessBuilder(
                     "logcat",
                     "-v",
-                    "time",
-                    "--pid=$pid",
+                    "threadtime",
+                    "-b",
+                    "all",
                     "*:V"
                 ).redirectErrorStream(true).start()
 

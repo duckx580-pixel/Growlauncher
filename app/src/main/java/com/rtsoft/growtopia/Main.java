@@ -13,9 +13,11 @@ import android.view.View;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.Toast;
 
 import com.rtsoft.growtopia.HeightProvider;
 import com.ubisoft.bridge.a;
+import com.gentz.launcher.logging.FileLogger;
 
 import launcher.powerkuy.growlauncher.api.JNICall;
 import launcher.powerkuy.growlauncher.api.JavaForNative;
@@ -81,6 +83,17 @@ public class Main extends SharedActivity {
     // Native methods declared here (engine expects these on Main class)
     public static native void nativeOnKey(int state, int virtualKey, int unicodeChar);
     public static native boolean nativeOnTouch(float x, float y, int action);
+
+    private boolean tryLoadGrowtopiaLibrary() {
+        try {
+            System.loadLibrary("growtopia");
+            return true;
+        } catch (UnsatisfiedLinkError e) {
+            Log.e("Main", "Failed to load libgrowtopia.so", e);
+            FileLogger.logException(this, "LOAD_GROWTOPIA_LIBRARY_FAILED", e);
+            return false;
+        }
+    }
 
     private void applyImmersiveFullscreen() {
         if (Build.VERSION.SDK_INT >= 30) {
@@ -191,7 +204,11 @@ public class Main extends SharedActivity {
         SharedActivity.IAPEnabled = true;
         SharedActivity.HookedEnabled = false;
         SharedActivity.PackageName = "com.rtsoft.growtopia";
-        System.loadLibrary("growtopia");
+        if (!tryLoadGrowtopiaLibrary()) {
+            Toast.makeText(this, "Failed to start game: missing native library (libgrowtopia.so).", Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
 
         super.onCreate(savedInstanceState);
 
