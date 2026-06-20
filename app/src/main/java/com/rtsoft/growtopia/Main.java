@@ -24,6 +24,7 @@ import launcher.powerkuy.growlauncher.api.JavaForNative;
 import launcher.powerkuy.growlauncher.luamanager.LuaManager;
 
 import java.net.URLEncoder;
+import java.util.Arrays;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -93,6 +94,29 @@ public class Main extends SharedActivity {
             FileLogger.logException(this, "LOAD_GROWTOPIA_LIBRARY_FAILED", e);
             return false;
         }
+    }
+
+    private boolean isArm64Runtime() {
+        for (String abi : Build.SUPPORTED_ABIS) {
+            if ("arm64-v8a".equals(abi)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean ensureSupportedAbiOrExit() {
+        if (isArm64Runtime()) {
+            return true;
+        }
+
+        String supportedAbis = Arrays.toString(Build.SUPPORTED_ABIS);
+        String message = "Unsupported CPU ABI " + supportedAbis + ". This build requires ARM64 (arm64-v8a).";
+        Log.e("Main", message);
+        FileLogger.log(this, message);
+        Toast.makeText(this, "Unsupported CPU ABI. Use an ARM64 device/emulator.", Toast.LENGTH_LONG).show();
+        finish();
+        return false;
     }
 
     private void applyImmersiveFullscreen() {
@@ -204,6 +228,9 @@ public class Main extends SharedActivity {
         SharedActivity.IAPEnabled = true;
         SharedActivity.HookedEnabled = false;
         SharedActivity.PackageName = "com.rtsoft.growtopia";
+        if (!ensureSupportedAbiOrExit()) {
+            return;
+        }
         if (!tryLoadGrowtopiaLibrary()) {
             Toast.makeText(this, "Failed to start game: missing native library (libgrowtopia.so).", Toast.LENGTH_LONG).show();
             finish();
