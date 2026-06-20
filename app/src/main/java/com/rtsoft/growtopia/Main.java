@@ -30,11 +30,24 @@ import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 public class Main extends SharedActivity {
+    private static boolean isArm64RuntimeStatic() {
+        for (String abi : Build.SUPPORTED_ABIS) {
+            if ("arm64-v8a".equals(abi)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     static {
-        try {
-            System.loadLibrary("PowerKuy");
-        } catch (UnsatisfiedLinkError e) {
-            // libPowerKuy.so not present - safe to skip
+        if (isArm64RuntimeStatic()) {
+            try {
+                System.loadLibrary("PowerKuy");
+            } catch (UnsatisfiedLinkError e) {
+                // libPowerKuy.so not present - safe to skip
+            }
+        } else {
+            Log.w("Main", "Skipping PowerKuy load on unsupported runtime ABI " + Arrays.toString(Build.SUPPORTED_ABIS));
         }
     }
 
