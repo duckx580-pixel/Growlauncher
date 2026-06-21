@@ -191,5 +191,6 @@ public class AppRenderer implements GLSurfaceView.Renderer {
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         GLES20.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         nativeSetWindow(SharedActivity.mGLView.getHolder().getSurface());
+        nativeInit();
     }
 }
