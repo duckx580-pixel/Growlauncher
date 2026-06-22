@@ -2,7 +2,7 @@
   "expo": {
     "name": "GrowLauncher",
     "slug": "growlauncher",
-    "version": "5.33.0",
+    "version": "5.49.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "frontend",
