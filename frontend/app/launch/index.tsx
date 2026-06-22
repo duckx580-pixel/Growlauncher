@@ -6,6 +6,7 @@ import { useTheme } from '@/src/contexts/ThemeContext';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { Linking } from 'react-native';
 import * as FileSystem from 'expo-file-system';
+import * as DocumentPicker from 'expo-document-picker';
 import axios from 'axios';
 
 const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
@@ -35,35 +36,83 @@ export default function LaunchScreen() {
   };
 
   const tryReadSaveFile = async (): Promise<string | null> => {
-    if (Platform.OS !== 'android') {
-      console.log('Not on Android, skipping file read');
-      return null;
-    }
-
-    // Possible save.dat locations on Android
-    const possiblePaths = [
-      '/data/data/com.rtsoft.growtopia/files/save.dat',
-      `${FileSystem.documentDirectory}growtopia/save.dat`,
-      `${FileSystem.cacheDirectory}save.dat`,
-    ];
-
-    for (const path of possiblePaths) {
+    if (Platform.OS === 'ios') {
+      // On iOS, show file picker for user to manually select save.dat
       try {
-        const fileInfo = await FileSystem.getInfoAsync(path);
-        if (fileInfo.exists) {
-          console.log(`Found save.dat at: ${path}`);
-          const content = await FileSystem.readAsStringAsync(path, {
-            encoding: FileSystem.EncodingType.Base64,
-          });
-          return content;
-        }
+        Alert.alert(
+          'Select save.dat',
+          'Please select your Growtopia save.dat file',
+          [
+            {
+              text: 'Skip',
+              style: 'cancel',
+              onPress: () => {},
+            },
+            {
+              text: 'Choose File',
+              onPress: async () => {
+                try {
+                  const result = await DocumentPicker.getDocumentAsync({
+                    type: '*/*',
+                    copyToCacheDirectory: true,
+                  });
+
+                  if (!result.canceled && result.assets[0]) {
+                    const file = result.assets[0];
+                    
+                    // Read file as base64
+                    const content = await FileSystem.readAsStringAsync(file.uri, {
+                      encoding: FileSystem.EncodingType.Base64,
+                    });
+                    
+                    console.log('iOS: File selected and read successfully');
+                    return content;
+                  }
+                } catch (error) {
+                  console.error('iOS file picker error:', error);
+                }
+                return null;
+              },
+            },
+          ]
+        );
+        
+        // Return null for now, actual file will be handled in alert callback
+        return null;
       } catch (error) {
-        // File not found or no permission, try next path
-        continue;
+        console.error('iOS file selection error:', error);
+        return null;
       }
     }
 
-    console.log('save.dat not found in any location');
+    // Android: Try to find save.dat automatically
+    if (Platform.OS === 'android') {
+      const possiblePaths = [
+        '/data/data/com.rtsoft.growtopia/files/save.dat',
+        '/storage/emulated/0/Android/data/com.rtsoft.growtopia/files/save.dat',
+        `${FileSystem.documentDirectory}growtopia/save.dat`,
+        `${FileSystem.cacheDirectory}save.dat`,
+      ];
+
+      for (const path of possiblePaths) {
+        try {
+          const fileInfo = await FileSystem.getInfoAsync(path);
+          if (fileInfo.exists) {
+            console.log(`Android: Found save.dat at: ${path}`);
+            const content = await FileSystem.readAsStringAsync(path, {
+              encoding: FileSystem.EncodingType.Base64,
+            });
+            return content;
+          }
+        } catch (error) {
+          // File not found or no permission, try next path
+          continue;
+        }
+      }
+
+      console.log('Android: save.dat not found in any location');
+    }
+
     return null;
   };
 

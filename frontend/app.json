@@ -9,7 +9,11 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Allow GrowLauncher to access your photo library to select files",
+        "NSDocumentsFolderUsageDescription": "Allow GrowLauncher to access documents to locate save.dat file"
+      }
     },
     "android": {
       "adaptiveIcon": {
