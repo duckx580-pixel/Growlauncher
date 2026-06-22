@@ -37,52 +37,33 @@ export default function LaunchScreen() {
 
   const tryReadSaveFile = async (): Promise<string | null> => {
     if (Platform.OS === 'ios') {
-      // On iOS, show file picker for user to manually select save.dat
-      try {
-        Alert.alert(
-          'Select save.dat',
-          'Please select your Growtopia save.dat file',
-          [
-            {
-              text: 'Skip',
-              style: 'cancel',
-              onPress: () => {},
-            },
-            {
-              text: 'Choose File',
-              onPress: async () => {
-                try {
-                  const result = await DocumentPicker.getDocumentAsync({
-                    type: '*/*',
-                    copyToCacheDirectory: true,
-                  });
+      // iOS: Check user's accessible folders automatically (no file picker)
+      const iosPaths = [
+        // User can manually place save.dat here once, then it works automatically
+        `${FileSystem.documentDirectory}save.dat`,
+        `${FileSystem.documentDirectory}growtopia/save.dat`,
+        `${FileSystem.documentDirectory}GrowLauncher/save.dat`,
+        `${FileSystem.cacheDirectory}save.dat`,
+      ];
 
-                  if (!result.canceled && result.assets[0]) {
-                    const file = result.assets[0];
-                    
-                    // Read file as base64
-                    const content = await FileSystem.readAsStringAsync(file.uri, {
-                      encoding: FileSystem.EncodingType.Base64,
-                    });
-                    
-                    console.log('iOS: File selected and read successfully');
-                    return content;
-                  }
-                } catch (error) {
-                  console.error('iOS file picker error:', error);
-                }
-                return null;
-              },
-            },
-          ]
-        );
-        
-        // Return null for now, actual file will be handled in alert callback
-        return null;
-      } catch (error) {
-        console.error('iOS file selection error:', error);
-        return null;
+      for (const path of iosPaths) {
+        try {
+          const fileInfo = await FileSystem.getInfoAsync(path);
+          if (fileInfo.exists) {
+            console.log(`iOS: Found save.dat at: ${path}`);
+            const content = await FileSystem.readAsStringAsync(path, {
+              encoding: FileSystem.EncodingType.Base64,
+            });
+            return content;
+          }
+        } catch (error) {
+          // File not found, try next path
+          continue;
+        }
       }
+
+      console.log('iOS: save.dat not found - user needs to place it in Documents folder');
+      return null;
     }
 
     // Android: Try to find save.dat automatically
@@ -190,6 +171,29 @@ export default function LaunchScreen() {
           <Text style={styles.infoText}>• Port: 17091</Text>
           <Text style={styles.infoText}>• Type: UDP</Text>
           <Text style={styles.infoText}>• Status: Ready</Text>
+          
+          {Platform.OS === 'ios' && (
+            <View style={styles.iosInstructionsBox}>
+              <Text style={[styles.infoTitle, { color: themeColor, marginTop: 16 }]}>
+                📱 iPhone Setup (One-time)
+              </Text>
+              <Text style={styles.infoText}>
+                1. Open Files app on iPhone
+              </Text>
+              <Text style={styles.infoText}>
+                2. Find your Growtopia save.dat file
+              </Text>
+              <Text style={styles.infoText}>
+                3. Copy it to: On My iPhone → GrowLauncher
+              </Text>
+              <Text style={styles.infoText}>
+                4. Rename to: save.dat
+              </Text>
+              <Text style={[styles.infoText, { color: '#4CAF50', marginTop: 8 }]}>
+                ✅ After setup, it works automatically!
+              </Text>
+            </View>
+          )}
         </View>
       </View>
     </View>
@@ -270,5 +274,11 @@ const styles = StyleSheet.create({
     color: '#999',
     fontSize: 14,
     marginBottom: 6,
+  },
+  iosInstructionsBox: {
+    marginTop: 8,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#333',
   },
 });
