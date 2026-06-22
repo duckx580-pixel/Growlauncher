@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "frontend",
-    "slug": "frontend",
-    "version": "1.0.0",
+    "name": "GrowLauncher",
+    "slug": "growlauncher",
+    "version": "5.33.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "frontend",
@@ -10,12 +10,14 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.growlauncher.app",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "Allow GrowLauncher to access your photo library to select files",
         "NSDocumentsFolderUsageDescription": "Allow GrowLauncher to access documents to locate save.dat file"
       }
     },
     "android": {
+      "package": "com.growlauncher.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#000"
