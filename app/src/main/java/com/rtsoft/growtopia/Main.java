@@ -74,9 +74,14 @@ public class Main extends SharedActivity {
         if (data == null) return false;
         Log.d("URL host", "" + data.getHost());
         Log.d("URL data", data.toString());
-        SharedActivity.mGLView.post(() -> {
-            NativeAppInterface.OnDeepLinkProcess(data.getSchemeSpecificPart());
-        });
+        Runnable deeplinkTask = () -> NativeAppInterface.OnDeepLinkProcess(data.getSchemeSpecificPart());
+        if (SharedActivity.mGLView != null) {
+            SharedActivity.mGLView.post(deeplinkTask);
+        } else if (mainApp != null) {
+            mainApp.runOnUiThread(deeplinkTask);
+        } else {
+            deeplinkTask.run();
+        }
         return true;
     }
 
@@ -117,11 +122,15 @@ public class Main extends SharedActivity {
         if (!"android.intent.action.VIEW".equals(action) || data == null) return;
         try {
             JNICall.Companion.notifyValueChanged(5, "google_redirect_callback",
-                "info=" + URLEncoder.encode(data.getQueryParameter("info"), "UTF-8") +
-                "&token=" + URLEncoder.encode(data.getQueryParameter("token"), "UTF-8"));
+                "info=" + encodeQueryValue(data.getQueryParameter("info")) +
+                "&token=" + encodeQueryValue(data.getQueryParameter("token")));
         } catch (Exception e) {
             Log.e("Main", "handleIntent error: " + e.getMessage());
         }
+    }
+
+    private String encodeQueryValue(String value) throws Exception {
+        return URLEncoder.encode(value == null ? "" : value, "UTF-8");
     }
 
     @Override
@@ -233,6 +242,7 @@ public class Main extends SharedActivity {
         getWindow().addFlags(128); // FLAG_KEEP_SCREEN_ON
 
         applyImmersiveFullscreen();
+        handleIntent(getIntent());
     }
 
     @Override

@@ -567,12 +567,19 @@ public class SharedActivity extends ComponentActivity implements SensorEventList
 
     public void toggle_keyboard(boolean show) {
         InputMethodManager imm = (InputMethodManager) getSystemService("input_method");
+        if (imm == null || m_editText == null) return;
         if (show) {
             m_editText.requestFocus();
             imm.showSoftInput(m_editText, InputMethodManager.SHOW_FORCED);
         } else {
-            imm.hideSoftInputFromWindow(mGLView.getWindowToken(), 0);
-            UpdateEditBoxInView(false, false);
+            if (mGLView != null) {
+                imm.hideSoftInputFromWindow(mGLView.getWindowToken(), 0);
+            } else {
+                imm.hideSoftInputFromWindow(m_editText.getWindowToken(), 0);
+            }
+            if (m_editTextRoot != null) {
+                UpdateEditBoxInView(false, false);
+            }
         }
     }
 
@@ -738,6 +745,7 @@ public class SharedActivity extends ComponentActivity implements SensorEventList
         }
         if (update_display_ad) {
             update_display_ad = false;
+            if (adLinearLayout == null) return;
             adLinearLayout.removeAllViews();
             if (tapjoy_ad_show == 1) {
                 adLinearLayout.addView(adView);
@@ -913,11 +921,15 @@ public class SharedActivity extends ComponentActivity implements SensorEventList
     @Override
     public void onPause() {
         synchronized (this) {
-            m_editText.setText("");
+            if (m_editText != null) m_editText.setText("");
             InputMethodManager imm = (InputMethodManager) getSystemService("input_method");
-            if (mGLView != null) imm.hideSoftInputFromWindow(mGLView.getWindowToken(), 0);
-            if (m_editText != null) imm.hideSoftInputFromWindow(m_editText.getWindowToken(), 0);
-            UpdateEditBoxInView(false, false);
+            if (imm != null) {
+                if (mGLView != null) imm.hideSoftInputFromWindow(mGLView.getWindowToken(), 0);
+                if (m_editText != null) imm.hideSoftInputFromWindow(m_editText.getWindowToken(), 0);
+            }
+            if (m_editTextRoot != null && m_editText != null) {
+                UpdateEditBoxInView(false, false);
+            }
             float savedHz = accelHzSave;
             setup_accel(0.0f);
             accelHzSave = savedHz;
