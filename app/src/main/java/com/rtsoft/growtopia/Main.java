@@ -249,6 +249,7 @@ public class Main extends SharedActivity {
 
     @Override
     public void onStop() {
+        launcher.powerkuy.CrashLogger.markLaunchFinished();
         if (NativeLibraries.isHookLoaded()) {
             JavaForNative.shutdown();
         }

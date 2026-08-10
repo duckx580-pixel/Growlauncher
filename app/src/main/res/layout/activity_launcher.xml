@@ -346,5 +346,19 @@
             android:text="@string/announcement_text"
             android:textColor="#B9AEE6"
             android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/crashLogButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            android:background="@drawable/bg_pill"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:padding="12dp"
+            android:text="@string/crash_share"
+            android:textColor="@android:color/white"
+            android:textSize="13sp" />
     </LinearLayout>
 </ScrollView>

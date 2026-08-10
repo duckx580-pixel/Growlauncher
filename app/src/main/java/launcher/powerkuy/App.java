@@ -17,6 +17,7 @@ public class App extends Application {
         super.onCreate();
         f10088p = this;
         prefs = getSharedPreferences("powerkuy_data", Context.MODE_PRIVATE);
+        CrashLogger.install(this);
     }
 
     public static AssetManager a() {

@@ -30,4 +30,9 @@
     <string name="coming_soon">%1$s is coming soon.</string>
     <string name="engine_missing_title">Growtopia engine missing</string>
     <string name="engine_missing_message">lib%1$s.so is not bundled in this build. Drop the arm64-v8a Growtopia %2$s libraries into app/src/main/jniLibs/arm64-v8a and rebuild.</string>
+
+    <string name="crash_share">Share crash log</string>
+    <string name="crash_log_empty">No crash log recorded yet.</string>
+    <string name="crash_detected_title">Growtopia crashed</string>
+    <string name="crash_detected_message">The last launch ended unexpectedly. A report with the device details and the native crash log was saved as %1$s.</string>
 </resources>
