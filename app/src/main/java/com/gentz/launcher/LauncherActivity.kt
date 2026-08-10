@@ -44,6 +44,10 @@ class LauncherActivity : AppCompatActivity() {
                 shareReport(report)
             }
         }
+        binding.crashLogButton.setOnLongClickListener {
+            CrashLogger.selfTestCrash()
+            true
+        }
 
         CrashLogger.consumePendingNativeCrash()?.let { report ->
             AlertDialog.Builder(this)

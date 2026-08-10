@@ -18,10 +18,12 @@ import java.util.Locale;
 /**
  * Writes crash reports to getExternalFilesDir("crashes") so they can be retrieved without adb.
  *
- * Java crashes are caught by the uncaught exception handler. Native crashes kill the process
- * before any handler runs, so a breadcrumb is written before the game activity starts and
- * checked on the next launcher start: if it is still there, the previous run died natively and
- * the logcat ring buffer (which survives the process) is dumped to recover the tombstone.
+ * Java crashes are caught by the uncaught exception handler. Native crashes are caught by the
+ * signal handler in libgtcrash.so, which writes signal details and a symbolized backtrace to
+ * {@link #nativeReport()} from inside the dying process; that file is folded into the report on
+ * the next launcher start. A breadcrumb written before the game activity starts also detects
+ * process deaths the signal handler cannot see, and the logcat ring buffer is dumped when the
+ * device allows it (many OEM builds deny READ_LOGS to apps).
  */
 public final class CrashLogger {
     private static final String TAG = "CrashLogger";
@@ -30,6 +32,8 @@ public final class CrashLogger {
     private static final int MAX_REPORTS = 10;
 
     private static Context appContext;
+    private static boolean libraryLoaded;
+    private static boolean nativeHandlerInstalled;
 
     private CrashLogger() {
     }
@@ -49,11 +53,72 @@ public final class CrashLogger {
                 previous.uncaughtException(thread, throwable);
             }
         });
+        installNativeHandler();
+    }
+
+    /**
+     * Installs the signal handler. Call again after loading libraries that install their own
+     * handlers (the engine bundles Crashlytics) so ours stays in the chain.
+     */
+    public static void installNativeHandler() {
+        if (appContext == null) {
+            return;
+        }
+        try {
+            if (!libraryLoaded) {
+                System.loadLibrary("gtcrash");
+                libraryLoaded = true;
+            }
+            nativeHandlerInstalled = installNativeHandler(nativeReport().getAbsolutePath());
+        } catch (Throwable t) {
+            Log.w(TAG, "native crash handler unavailable", t);
+        }
+    }
+
+    public static boolean isNativeHandlerInstalled() {
+        return nativeHandlerInstalled;
+    }
+
+    private static native boolean installNativeHandler(String reportPath);
+
+    private static native void nativeSelfTest();
+
+    /** Crashes the process on purpose so the report pipeline can be verified on a device. */
+    public static void selfTestCrash() {
+        markLaunchStarted();
+        installNativeHandler();
+        nativeSelfTest();
+    }
+
+    private static File nativeReport() {
+        return new File(reportDir(), "native-signal.txt");
+    }
+
+    private static String consumeNativeReport() {
+        File report = nativeReport();
+        if (!report.exists()) {
+            return "No native signal report: the process was killed without a fatal signal "
+                    + "(out of memory, ANR kill or an abort before the handler was installed).\n";
+        }
+        StringBuilder out = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(new java.io.FileReader(report))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                out.append(line).append('\n');
+            }
+        } catch (Exception e) {
+            out.append("cannot read native report: ").append(e).append('\n');
+        }
+        if (!report.delete()) {
+            Log.w(TAG, "cannot delete " + report);
+        }
+        return out.toString();
     }
 
     /** Marks that the game activity is about to start, so a native crash can be detected later. */
     public static void markLaunchStarted() {
-        prefs().edit().putString(KEY_PENDING, timestamp()).apply();
+        // commit(), not apply(): the process can die before an async write reaches disk.
+        prefs().edit().putString(KEY_PENDING, timestamp()).commit();
     }
 
     public static void markLaunchFinished() {
@@ -65,17 +130,21 @@ public final class CrashLogger {
      */
     public static File consumePendingNativeCrash() {
         String started = prefs().getString(KEY_PENDING, null);
-        if (started == null) {
+        boolean signalled = nativeReport().exists();
+        if (started == null && !signalled) {
             return null;
         }
         markLaunchFinished();
-        return write("native-crash", "Game launched at " + started
-                + " and the process died without returning.\n\n" + readLogcat());
+        return write("native-crash", "Game launched at "
+                + (started == null ? "an unrecorded time" : started)
+                + " and the process died without returning.\n\n"
+                + consumeNativeReport()
+                + "\nlogcat:\n" + readLogcat());
     }
 
     public static File latestReport() {
-        File[] reports = reportDir().listFiles();
-        if (reports == null || reports.length == 0) {
+        File[] reports = reports();
+        if (reports.length == 0) {
             return null;
         }
         File newest = reports[0];
@@ -88,8 +157,7 @@ public final class CrashLogger {
     }
 
     private static File write(String kind, String body) {
-        File dir = reportDir();
-        File report = new File(dir, kind + "-" + timestamp() + ".txt");
+        File report = new File(reportDir(), kind + "-" + timestamp() + ".txt");
         try (FileWriter writer = new FileWriter(report)) {
             writer.write(deviceInfo());
             writer.write("\n");
@@ -98,7 +166,7 @@ public final class CrashLogger {
             Log.e(TAG, "cannot write " + report, e);
             return null;
         }
-        prune(dir);
+        prune();
         return report;
     }
 
@@ -110,7 +178,8 @@ public final class CrashLogger {
                 + "Android: " + Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ")\n"
                 + "ABIs: " + android.text.TextUtils.join(", ", Build.SUPPORTED_ABIS) + "\n"
                 + "Engine loaded: " + com.rtsoft.growtopia.NativeLibraries.isGameLoaded()
-                + ", hook loaded: " + com.rtsoft.growtopia.NativeLibraries.isHookLoaded() + "\n";
+                + ", hook loaded: " + com.rtsoft.growtopia.NativeLibraries.isHookLoaded() + "\n"
+                + "Native handler: " + nativeHandlerInstalled + "\n";
     }
 
     private static String readLogcat() {
@@ -131,9 +200,9 @@ public final class CrashLogger {
         return out.toString();
     }
 
-    private static void prune(File dir) {
-        File[] reports = dir.listFiles();
-        if (reports == null || reports.length <= MAX_REPORTS) {
+    private static void prune() {
+        File[] reports = reports();
+        if (reports.length <= MAX_REPORTS) {
             return;
         }
         java.util.Arrays.sort(reports, (a, b) -> Long.compare(a.lastModified(), b.lastModified()));
@@ -142,6 +211,13 @@ public final class CrashLogger {
                 Log.w(TAG, "cannot delete " + reports[i]);
             }
         }
+    }
+
+    /** The finished reports, excluding the scratch file the signal handler writes into. */
+    private static File[] reports() {
+        File[] files = reportDir().listFiles(
+                (dir, name) -> !name.equals(nativeReport().getName()));
+        return files == null ? new File[0] : files;
     }
 
     private static File reportDir() {

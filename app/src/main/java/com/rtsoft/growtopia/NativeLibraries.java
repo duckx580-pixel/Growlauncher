@@ -44,6 +44,7 @@ public final class NativeLibraries {
             Log.w(TAG, "lib" + HOOK_LIBRARY + ".so not present, hooks disabled");
             hookLoaded = false;
         }
+        launcher.powerkuy.CrashLogger.installNativeHandler();
         return gameLoaded;
     }
 
