@@ -70,3 +70,6 @@ vcpkg_installed/
 Testing/
 .cache/
 local.properties
+
+# Native build intermediates
+app/.cxx/
