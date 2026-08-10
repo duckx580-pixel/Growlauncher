@@ -112,6 +112,7 @@ public class SharedActivity extends ComponentActivity implements SensorEventList
     static final int MESSAGE_TYPE_VIBRATE = 16;
     static final int MESSAGE_USER = 1000;
     public static String PackageName = "com.rtsoft.growtopia";
+    public static String GameVersionName = BuildConfig.VERSION_NAME;
     static final int RC_REQUEST = 10001;
     static final int RESULT_BILLING_UNAVAILABLE = 3;
     static final int RESULT_DEVELOPER_ERROR = 5;
@@ -262,16 +263,14 @@ public class SharedActivity extends ComponentActivity implements SensorEventList
     }
 
     public static String get_apkFileName() {
+        // Our own APK ships the packaged game assets, so it is always the primary source.
         try {
-            // Try official Growtopia APK first (has full game assets)
-            return app.getPackageManager().getApplicationInfo(PackageName, 0).sourceDir;
+            return app.getPackageManager().getApplicationInfo(app.getPackageName(), 0).sourceDir;
         } catch (PackageManager.NameNotFoundException e) {
-            // Fall back to our own APK if official Growtopia is not installed
             try {
-                return app.getPackageManager().getApplicationInfo(app.getPackageName(), 0).sourceDir;
+                return app.getPackageManager().getApplicationInfo("com.rtsoft.growtopia", 0).sourceDir;
             } catch (PackageManager.NameNotFoundException e2) {
-                e2.printStackTrace();
-                throw new RuntimeException("Unable to locate assets, aborting...");
+                throw new RuntimeException("Unable to locate assets, aborting...", e2);
             }
         }
     }
@@ -674,16 +673,11 @@ public class SharedActivity extends ComponentActivity implements SensorEventList
     }
 
     public void sendVersionDetails() {
+        if (!NativeLibraries.isGameLoaded()) return;
         try {
-            String versionName;
-            try {
-                versionName = getPackageManager().getPackageInfo("com.rtsoft.growtopia", 0).versionName;
-            } catch (Exception e2) {
-                versionName = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
-            }
-            nativeSendGUIStringEx(47, 0, 0, 0, versionName);
-        } catch (Exception e) {
-            Log.e(PackageName, "sendVersionDetails error: " + e.getMessage());
+            nativeSendGUIStringEx(47, 0, 0, 0, GameVersionName);
+        } catch (Throwable t) {
+            Log.e(PackageName, "sendVersionDetails error: " + t.getMessage());
         }
     }
 
@@ -742,6 +736,13 @@ public class SharedActivity extends ComponentActivity implements SensorEventList
     @Override
     public void onCreate(Bundle savedInstanceState) {
         app = this;
+        if (!NativeLibraries.loadGame()) {
+            super.onCreate(savedInstanceState);
+            Log.e(PackageName, "lib" + NativeLibraries.GAME_LIBRARY + ".so is missing, cannot start the game");
+            Toast.makeText(this, "Growtopia engine library is missing from this build.", Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
         nativeInitActivity(this);
         apiVersion = Build.VERSION.SDK_INT;
         Log.d(PackageName, "API Level: " + apiVersion);
@@ -906,11 +907,13 @@ public class SharedActivity extends ComponentActivity implements SensorEventList
     @Override
     public void onPause() {
         synchronized (this) {
-            m_editText.setText("");
             InputMethodManager imm = (InputMethodManager) getSystemService("input_method");
             if (mGLView != null) imm.hideSoftInputFromWindow(mGLView.getWindowToken(), 0);
-            if (m_editText != null) imm.hideSoftInputFromWindow(m_editText.getWindowToken(), 0);
-            UpdateEditBoxInView(false, false);
+            if (m_editText != null) {
+                imm.hideSoftInputFromWindow(m_editText.getWindowToken(), 0);
+                m_editText.setText("");
+                if (NativeLibraries.isGameLoaded()) UpdateEditBoxInView(false, false);
+            }
             float savedHz = accelHzSave;
             setup_accel(0.0f);
             accelHzSave = savedHz;
@@ -924,7 +927,7 @@ public class SharedActivity extends ComponentActivity implements SensorEventList
         synchronized (this) {
             music_set_volume(m_lastMusicVol);
             if (mGLView != null) mGLView.onResume();
-            setup_accel(accelHzSave);
+            if (NativeLibraries.isGameLoaded()) setup_accel(accelHzSave);
             super.onResume();
         }
     }
@@ -937,6 +940,7 @@ public class SharedActivity extends ComponentActivity implements SensorEventList
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (!NativeLibraries.isGameLoaded()) return super.onKeyDown(keyCode, event);
         if (keyCode == 67) return true;
         if (event.getRepeatCount() > 0) return super.onKeyDown(keyCode, event);
         if (event.isAltPressed() && keyCode == 4) {
@@ -953,6 +957,7 @@ public class SharedActivity extends ComponentActivity implements SensorEventList
 
     @Override
     public boolean onKeyUp(int keyCode, KeyEvent event) {
+        if (!NativeLibraries.isGameLoaded()) return super.onKeyUp(keyCode, event);
         if (keyCode == 67) return true;
         if (event.isAltPressed() && keyCode == 4) {
             nativeOnKey(0, VIRTUAL_DPAD_BUTTON_RIGHT, event.getUnicodeChar());
@@ -986,6 +991,7 @@ public class SharedActivity extends ComponentActivity implements SensorEventList
 
     @Override
     public void onSensorChanged(SensorEvent event) {
+        if (!NativeLibraries.isGameLoaded()) return;
         if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
             float[] v = event.values;
             if (v.length >= 3) {
