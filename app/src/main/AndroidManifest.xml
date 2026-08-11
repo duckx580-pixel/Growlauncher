@@ -136,6 +136,16 @@
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
 
         <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.crashlogs"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <provider
             android:name="com.facebook.ads.AudienceNetworkContentProvider"
             android:exported="false"
             android:authorities="${applicationId}.AudienceNetworkContentProvider" />

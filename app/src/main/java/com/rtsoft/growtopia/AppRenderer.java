@@ -105,18 +105,20 @@ public class AppRenderer implements GLSurfaceView.Renderer {
             if (!SharedActivity.bIsShuttingDown && Looper.myLooper() != Looper.getMainLooper()) {
                 nativeUpdate();
                 nativeRender();
-                try { Main.PowerKuyRootRenderer.nativeDrawFrame(); } catch (UnsatisfiedLinkError e) {}
+                if (NativeLibraries.isHookLoaded()) {
+                    Main.PowerKuyRootRenderer.nativeDrawFrame();
+                }
             }
 
             // PowerKuy message pump
-            try {
+            if (NativeLibraries.isHookLoaded()) {
                 int pkMsg = Main.PowerKuyRootRenderer.nativeGetMessagePowerKuy();
                 if (pkMsg == 1) {
                     ((InputMethodManager) SharedActivity.app.getSystemService("input_method")).toggleSoftInput(2, 0);
                 } else if (pkMsg == 2) {
                     ((InputMethodManager) SharedActivity.app.getSystemService("input_method")).hideSoftInputFromWindow(SharedActivity.mGLView.getWindowToken(), 0);
                 }
-            } catch (UnsatisfiedLinkError e) {}
+            }
 
             // Proton OS message pump
             int msg;
@@ -184,12 +186,15 @@ public class AppRenderer implements GLSurfaceView.Renderer {
         this.width = w;
         this.height = h;
         nativeSetWindow(SharedActivity.mGLView.getHolder().getSurface());
-        try { Main.PowerKuyRootRenderer.nativeSurfaceChanged(w, h); } catch (UnsatisfiedLinkError e) {}
+        if (NativeLibraries.isHookLoaded()) {
+            Main.PowerKuyRootRenderer.nativeSurfaceChanged(w, h);
+        }
     }
 
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         GLES20.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         nativeSetWindow(SharedActivity.mGLView.getHolder().getSurface());
+        nativeInit();
     }
 }

@@ -19,6 +19,7 @@
 
 # Compiled Dynamic libraries
 *.so
+!app/src/main/jniLibs/**/*.so
 *.dylib
 *.dll
 *.so.*
@@ -69,3 +70,6 @@ vcpkg_installed/
 Testing/
 .cache/
 local.properties
+
+# Native build intermediates
+app/.cxx/

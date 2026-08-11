@@ -27,14 +27,6 @@ import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 public class Main extends SharedActivity {
-    static {
-        try {
-            System.loadLibrary("PowerKuy");
-        } catch (UnsatisfiedLinkError e) {
-            // libPowerKuy.so not present - safe to skip
-        }
-    }
-
     public static boolean OriginalKeyboard = false;
     public static boolean block_pause;
     public static HelpShiftManager helpshiftManager;
@@ -63,6 +55,10 @@ public class Main extends SharedActivity {
     public static Object GetIronSourceManager() { return mainApp.ironSourceManager; }
     public static MAFManager GetMAFManager() { return mainApp.mafManager; }
     public static UsercentricsManager GetUsercentricsManager() {
+        if (mainApp == null) return null;
+        if (mainApp.usercentricsManager == null) {
+            mainApp.usercentricsManager = new UsercentricsManager(mainApp);
+        }
         return mainApp.usercentricsManager;
     }
     public static WebViewManager GetWebViewManager() { return mainApp.webViewManager; }
@@ -190,10 +186,18 @@ public class Main extends SharedActivity {
         SharedActivity.securityEnabled = false;
         SharedActivity.IAPEnabled = true;
         SharedActivity.HookedEnabled = false;
-        SharedActivity.PackageName = BuildConfig.APPLICATION_ID;
-        System.loadLibrary("growtopia");
+        SharedActivity.PackageName = getPackageName();
+        SharedActivity.GameVersionName = BuildConfig.VERSION_NAME;
+        NativeLibraries.loadGame();
+
+        // The engine can ask for the consent manager from its first frame, so it has to
+        // exist before the GL surface is created in SharedActivity.onCreate().
+        this.usercentricsManager = new UsercentricsManager(this);
 
         super.onCreate(savedInstanceState);
+        if (isFinishing()) {
+            return;
+        }
 
         Configuration config = getResources().getConfiguration();
         int h = config.screenHeightDp;
@@ -212,7 +216,6 @@ public class Main extends SharedActivity {
 
         this.firebaseCrashlyticsManager = new FirebaseCrashlyticsManager(this);
         initialize(savedInstanceState);
-        this.usercentricsManager = new UsercentricsManager(this);
         getWindow().addFlags(128); // FLAG_KEEP_SCREEN_ON
 
         applyImmersiveFullscreen();
@@ -246,7 +249,10 @@ public class Main extends SharedActivity {
 
     @Override
     public void onStop() {
-        JavaForNative.shutdown();
+        launcher.powerkuy.CrashLogger.markLaunchFinished();
+        if (NativeLibraries.isHookLoaded()) {
+            JavaForNative.shutdown();
+        }
         super.onStop();
     }
 

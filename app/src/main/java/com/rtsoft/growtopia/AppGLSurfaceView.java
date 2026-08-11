@@ -46,14 +46,14 @@ public class AppGLSurfaceView extends GLSurfaceView {
     @Override
     public void onPause() {
         super.onPause();
-        if (SharedActivity.bIsShuttingDown) return;
+        if (SharedActivity.bIsShuttingDown || !NativeLibraries.isGameLoaded()) return;
         nativePause();
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        if (SharedActivity.bIsShuttingDown) return;
+        if (SharedActivity.bIsShuttingDown || !NativeLibraries.isGameLoaded()) return;
         try { setSystemUiVisibility(260); } catch (Exception e) {}
         nativeResume();
     }
@@ -61,15 +61,14 @@ public class AppGLSurfaceView extends GLSurfaceView {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         super.onTouchEvent(event);
+        if (!NativeLibraries.isGameLoaded()) {
+            return false;
+        }
         if (mMultiTouchClassAvailable) {
             return WrapSharedMultiTouchInput.OnInput(event);
         }
-        try {
-            if (Main.nativeOnTouch(event.getX(), event.getY(), event.getAction())) {
-                return true;
-            }
-        } catch (UnsatisfiedLinkError e) {
-            // libPowerKuy.so not loaded
+        if (NativeLibraries.isHookLoaded() && Main.nativeOnTouch(event.getX(), event.getY(), event.getAction())) {
+            return true;
         }
         nativeOnTouch(event.getAction(), event.getX(), event.getY(), 0);
         return false;
