@@ -102,7 +102,8 @@ public class AppRenderer implements GLSurfaceView.Renderer {
                 m_gameTimer = SystemClock.uptimeMillis() + m_timerLoopMS;
             }
 
-            if (!SharedActivity.bIsShuttingDown && Looper.myLooper() != Looper.getMainLooper()) {
+            if (!SharedActivity.bIsShuttingDown && Looper.myLooper() != Looper.getMainLooper()
+                    && NativeLibraries.isGameLoaded()) {
                 nativeUpdate();
                 nativeRender();
                 if (NativeLibraries.isHookLoaded()) {
@@ -122,7 +123,7 @@ public class AppRenderer implements GLSurfaceView.Renderer {
 
             // Proton OS message pump
             int msg;
-            while (this.app != null && !SharedActivity.bIsShuttingDown && (msg = nativeOSMessageGet()) != 0) {
+            while (this.app != null && !SharedActivity.bIsShuttingDown && NativeLibraries.isGameLoaded() && (msg = nativeOSMessageGet()) != 0) {
                 if (msg == MESSAGE_OPEN_TEXT_BOX || msg == MESSAGE_OPEN_TEXTBOX_SECRET) {
                     SharedActivity.passwordField = (msg == MESSAGE_OPEN_TEXTBOX_SECRET);
                     SharedActivity.m_text_max_length = nativeGetLastOSMessageParm1();
@@ -182,10 +183,11 @@ public class AppRenderer implements GLSurfaceView.Renderer {
     @Override
     public void onSurfaceChanged(GL10 gl, int w, int h) {
         GLES20.glViewport(0, 0, w, h);
+        // Bind (or rebind) the surface before telling the engine about the new dimensions.
+        nativeSetWindow(SharedActivity.mGLView.getHolder().getSurface());
         nativeResize(w, h);
         this.width = w;
         this.height = h;
-        nativeSetWindow(SharedActivity.mGLView.getHolder().getSurface());
         if (NativeLibraries.isHookLoaded()) {
             Main.PowerKuyRootRenderer.nativeSurfaceChanged(w, h);
         }
@@ -194,6 +196,7 @@ public class AppRenderer implements GLSurfaceView.Renderer {
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         GLES20.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        // Bind the surface before initialising the engine so OpenGL state has a valid target.
         nativeSetWindow(SharedActivity.mGLView.getHolder().getSurface());
         nativeInit();
     }
