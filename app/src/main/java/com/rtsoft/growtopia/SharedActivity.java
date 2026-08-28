@@ -45,10 +45,13 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.activity.ComponentActivity;
+import androidx.appcompat.app.AppCompatActivity;
 
 import com.anzu.sdk.Anzu;
+import com.tapjoy.Tapjoy;
+import com.tapjoy.TJGetCurrencyBalanceListener;
 import com.tapjoy.TJPlacement;
+import com.tapjoy.TJPlacementVideoListener;
 
 import launcher.powerkuy.App;
 
@@ -57,7 +60,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Locale;
 
-public class SharedActivity extends ComponentActivity implements SensorEventListener {
+public class SharedActivity extends AppCompatActivity implements SensorEventListener, TJGetCurrencyBalanceListener, TJPlacementVideoListener {
     public static boolean HookedEnabled = false;
     public static boolean IAPEnabled = false;
     static final int MESSAGE_OPEN_TEXTBOX_SECRET = 41;
@@ -933,10 +936,16 @@ public class SharedActivity extends ComponentActivity implements SensorEventList
     }
 
     @Override
-    public void onStart() { super.onStart(); }
+    public void onStart() {
+        super.onStart();
+        Tapjoy.onActivityStart(this);
+    }
 
     @Override
-    public void onStop() { super.onStop(); }
+    public void onStop() {
+        Tapjoy.onActivityStop(this);
+        super.onStop();
+    }
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
