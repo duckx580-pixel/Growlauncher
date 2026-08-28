@@ -1,9 +1,6 @@
 package com.rtsoft.growtopia;
 
 import android.app.Activity;
-import android.opengl.GLSurfaceView;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
 
 import java.util.ArrayList;
@@ -18,87 +15,52 @@ public class UsercentricsManager {
         this.baseContext = activity;
     }
 
-    public void CheckConsentState() {
-        deliverConsent(new ArrayList<>());
-    }
-
-    public void FetchUserConsent(List<Object> list) {
-        deliverConsent(list == null ? new ArrayList<>() : list);
-    }
-
-    /**
-     * The engine reads the consent result from its own render thread while it is still
-     * booting. Answering inline from the UI thread re-enters native code before the
-     * engine finished initializing, which crashes the age/consent gate, so the callback
-     * is queued on the GL thread instead.
-     */
-    private void deliverConsent(final List<Object> consents) {
-        final Runnable callback = () -> {
-            try {
-                OnConsentFetchedSuccess(consents);
-            } catch (UnsatisfiedLinkError e) {
-                Log.w(TAG, "consent callback unavailable: " + e.getMessage());
-            } catch (Throwable t) {
-                Log.e(TAG, "consent callback failed: " + t);
-            }
-        };
-        if (!NativeLibraries.isGameLoaded()) {
-            Log.w(TAG, "engine not loaded, dropping consent callback");
-            return;
-        }
-        GLSurfaceView glView = SharedActivity.mGLView;
-        if (glView != null) {
-            glView.queueEvent(callback);
-        } else {
-            new Handler(Looper.getMainLooper()).post(callback);
-        }
-    }
-
+    // Native callbacks — called from the UI thread (matches real 5.55 implementation)
     public native void InitFinish(boolean success);
-
-    public native void OnConsentFetchedFail(int i10, String str);
-
+    public native void OnConsentFetchedFail(int code, String message);
     public native void OnConsentFetchedSuccess(List<Object> list);
 
-    public void RequestConsentSettings() {
-    }
-
-    public void ShowConsentSettings() {
-    }
-
     public void InitWithRuleSet(String str) {
-        deliverInitFinish(true);
+        // Auto-succeed: no Usercentrics SDK, so signal ready immediately on UI thread
+        baseContext.runOnUiThread(() -> {
+            try { InitFinish(true); } catch (UnsatisfiedLinkError e) {
+                Log.w(TAG, "InitFinish unavailable: " + e.getMessage());
+            }
+        });
     }
 
     public void InitWithSettings(String str) {
-        deliverInitFinish(true);
+        baseContext.runOnUiThread(() -> {
+            try { InitFinish(true); } catch (UnsatisfiedLinkError e) {
+                Log.w(TAG, "InitFinish unavailable: " + e.getMessage());
+            }
+        });
     }
 
-    /**
-     * Calls InitFinish on the GL thread so the engine's initialization gate is
-     * unblocked. The engine calls InitWithRuleSet/InitWithSettings and then stalls
-     * waiting for this callback; without it the first nativeRender() produces only
-     * a black screen.
-     */
-    private void deliverInitFinish(final boolean success) {
-        final Runnable callback = () -> {
-            try {
-                InitFinish(success);
-            } catch (UnsatisfiedLinkError e) {
-                Log.w(TAG, "InitFinish callback unavailable: " + e.getMessage());
-            } catch (Throwable t) {
-                Log.e(TAG, "InitFinish callback failed: " + t);
+    public void CheckConsentState() {
+        // Auto-accept: deliver empty consent list from UI thread (matches real threading model)
+        baseContext.runOnUiThread(() -> {
+            try { OnConsentFetchedSuccess(new ArrayList<>()); } catch (UnsatisfiedLinkError e) {
+                Log.w(TAG, "OnConsentFetchedSuccess unavailable: " + e.getMessage());
             }
-        };
-        if (!NativeLibraries.isGameLoaded()) {
-            Log.w(TAG, "engine not loaded, dropping InitFinish callback");
-            return;
-        }
-        GLSurfaceView glView = SharedActivity.mGLView;
-        if (glView != null) {
-            glView.queueEvent(callback);
-        } else {
-            new Handler(Looper.getMainLooper()).post(callback);
-        }
+        });
+    }
+
+    public void FetchUserConsent(List<Object> list) {
+        baseContext.runOnUiThread(() -> {
+            try { OnConsentFetchedSuccess(list != null ? list : new ArrayList<>()); } catch (UnsatisfiedLinkError e) {
+                Log.w(TAG, "OnConsentFetchedSuccess unavailable: " + e.getMessage());
+            }
+        });
+    }
+
+    public void RequestConsentSettings() {
+        // No real consent UI — auto-accept immediately
+        CheckConsentState();
+    }
+
+    public void ShowConsentSettings() {
+        // No real consent UI — auto-accept immediately
+        CheckConsentState();
     }
 }
