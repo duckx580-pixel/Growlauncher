@@ -266,12 +266,13 @@ public class SharedActivity extends AppCompatActivity implements SensorEventList
     }
 
     public static String get_apkFileName() {
-        // Our own APK ships the packaged game assets, so it is always the primary source.
+        // Prefer the official Growtopia APK so assets always match whatever version is installed.
+        // Fall back to our own bundled assets only if Growtopia is not installed.
         try {
-            return app.getPackageManager().getApplicationInfo(app.getPackageName(), 0).sourceDir;
+            return app.getPackageManager().getApplicationInfo("com.rtsoft.growtopia", 0).sourceDir;
         } catch (PackageManager.NameNotFoundException e) {
             try {
-                return app.getPackageManager().getApplicationInfo("com.rtsoft.growtopia", 0).sourceDir;
+                return app.getPackageManager().getApplicationInfo(app.getPackageName(), 0).sourceDir;
             } catch (PackageManager.NameNotFoundException e2) {
                 throw new RuntimeException("Unable to locate assets, aborting...", e2);
             }
