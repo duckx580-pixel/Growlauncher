@@ -64,6 +64,10 @@ public class AppRenderer implements GLSurfaceView.Renderer {
 
     static long m_gameTimer;
     static int m_timerLoopMS;
+    // nativeInit() registers a window view inside the engine; calling it a second time
+    // (surface recreated, activity relaunched without process restart) triggers
+    // "View already added to window manager". Guard it to one call per process.
+    private static volatile boolean nativeInitDone = false;
     public SharedActivity app;
     int width;
     int height;
@@ -196,8 +200,11 @@ public class AppRenderer implements GLSurfaceView.Renderer {
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         GLES20.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-        // Bind the surface before initialising the engine so OpenGL state has a valid target.
+        // Always rebind the (possibly new) surface, but init the engine only once.
         nativeSetWindow(SharedActivity.mGLView.getHolder().getSurface());
-        nativeInit();
+        if (!nativeInitDone) {
+            nativeInitDone = true;
+            nativeInit();
+        }
     }
 }

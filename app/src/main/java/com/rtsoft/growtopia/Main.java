@@ -217,13 +217,15 @@ public class Main extends SharedActivity {
         this.firebaseCrashlyticsManager = new FirebaseCrashlyticsManager(this);
         initialize(savedInstanceState);
         getWindow().addFlags(128); // FLAG_KEEP_SCREEN_ON
-
-        applyImmersiveFullscreen();
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
+        // The native engine registers a window overlay and holds static JNI state.
+        // Killing the process here ensures a clean slate on the next launch so
+        // nativeInit() / nativeInitActivity() never see stale state.
+        android.os.Process.killProcess(android.os.Process.myPid());
     }
 
     @Override
