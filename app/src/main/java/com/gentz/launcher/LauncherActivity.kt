@@ -9,7 +9,6 @@ import androidx.core.content.FileProvider
 import com.gentz.launcher.databinding.ActivityLauncherBinding
 import com.rtsoft.growtopia.NativeLibraries
 import java.io.File
-import launcher.powerkuy.CrashLogger
 
 class LauncherActivity : AppCompatActivity() {
     private lateinit var binding: ActivityLauncherBinding

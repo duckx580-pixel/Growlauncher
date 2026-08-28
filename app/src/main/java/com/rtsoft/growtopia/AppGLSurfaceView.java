@@ -64,9 +64,7 @@ public class AppGLSurfaceView extends GLSurfaceView {
         if (mMultiTouchClassAvailable) {
             return WrapSharedMultiTouchInput.OnInput(motionEvent);
         }
-        if (!Main.nativeOnTouch(motionEvent.getX(), motionEvent.getY(), motionEvent.getAction())) {
-            nativeOnTouch(motionEvent.getAction(), motionEvent.getX(), motionEvent.getY(), 0);
-        }
+        nativeOnTouch(motionEvent.getAction(), motionEvent.getX(), motionEvent.getY(), 0);
         return false;
     }
 }

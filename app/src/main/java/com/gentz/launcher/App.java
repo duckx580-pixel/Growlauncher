@@ -1,4 +1,4 @@
-package launcher.powerkuy;
+package com.gentz.launcher;
 
 import android.app.Application;
 import android.content.Context;
@@ -16,7 +16,7 @@ public class App extends Application {
     public void onCreate() {
         super.onCreate();
         f10088p = this;
-        prefs = getSharedPreferences("powerkuy_data", Context.MODE_PRIVATE);
+        prefs = getSharedPreferences("launcher_data", Context.MODE_PRIVATE);
         CrashLogger.install(this);
     }
 
@@ -27,7 +27,7 @@ public class App extends Application {
     public static String getData(String key) {
         if (f10088p == null) return "";
         if (prefs == null) {
-            prefs = f10088p.getSharedPreferences("powerkuy_data", Context.MODE_PRIVATE);
+            prefs = f10088p.getSharedPreferences("launcher_data", Context.MODE_PRIVATE);
         }
         String value = prefs.getString(key, null);
         if (value == null) {

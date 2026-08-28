@@ -1,4 +1,4 @@
-package launcher.powerkuy;
+package com.gentz.launcher;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -178,7 +178,7 @@ public final class CrashLogger {
                 + "Android: " + Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ")\n"
                 + "ABIs: " + android.text.TextUtils.join(", ", Build.SUPPORTED_ABIS) + "\n"
                 + "Engine loaded: " + com.rtsoft.growtopia.NativeLibraries.isGameLoaded()
-                + ", hook loaded: " + com.rtsoft.growtopia.NativeLibraries.isHookLoaded() + "\n"
+                + "\n"
                 + "Native handler: " + nativeHandlerInstalled + "\n";
     }
 

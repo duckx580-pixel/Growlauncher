@@ -6,7 +6,6 @@ import android.os.Looper;
 import android.os.SystemClock;
 import android.util.Log;
 import android.view.Surface;
-import android.view.inputmethod.InputMethodManager;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -105,19 +104,6 @@ public class AppRenderer implements GLSurfaceView.Renderer {
                     && NativeLibraries.isGameLoaded()) {
                 nativeUpdate();
                 nativeRender();
-                if (NativeLibraries.isHookLoaded()) {
-                    Main.PowerKuyRootRenderer.nativeDrawFrame();
-                }
-            }
-
-            // PowerKuy message pump
-            if (NativeLibraries.isHookLoaded()) {
-                int pkMsg = Main.PowerKuyRootRenderer.nativeGetMessagePowerKuy();
-                if (pkMsg == 1) {
-                    ((InputMethodManager) SharedActivity.app.getSystemService("input_method")).toggleSoftInput(2, 0);
-                } else if (pkMsg == 2) {
-                    ((InputMethodManager) SharedActivity.app.getSystemService("input_method")).hideSoftInputFromWindow(SharedActivity.mGLView.getWindowToken(), 0);
-                }
             }
 
             // Proton OS message pump
@@ -192,9 +178,6 @@ public class AppRenderer implements GLSurfaceView.Renderer {
         nativeSetWindow(SharedActivity.mGLView.getHolder().getSurface());
         this.width = w;
         this.height = h;
-        if (NativeLibraries.isHookLoaded()) {
-            Main.PowerKuyRootRenderer.nativeSurfaceChanged(w, h);
-        }
     }
 
     @Override

@@ -16,11 +16,9 @@ import java.io.File;
 public final class NativeLibraries {
     private static final String TAG = "NativeLibraries";
     public static final String GAME_LIBRARY = "growtopia";
-    public static final String HOOK_LIBRARY = "PowerKuy";
 
     private static boolean attempted;
     private static boolean gameLoaded;
-    private static boolean hookLoaded;
 
     private NativeLibraries() {
     }
@@ -37,23 +35,12 @@ public final class NativeLibraries {
             Log.e(TAG, "lib" + GAME_LIBRARY + ".so is missing from jniLibs: " + e.getMessage());
             gameLoaded = false;
         }
-        try {
-            System.loadLibrary(HOOK_LIBRARY);
-            hookLoaded = true;
-        } catch (UnsatisfiedLinkError e) {
-            Log.w(TAG, "lib" + HOOK_LIBRARY + ".so not present, hooks disabled");
-            hookLoaded = false;
-        }
-        launcher.powerkuy.CrashLogger.installNativeHandler();
+        com.gentz.launcher.CrashLogger.installNativeHandler();
         return gameLoaded;
     }
 
     public static synchronized boolean isGameLoaded() {
         return gameLoaded;
-    }
-
-    public static synchronized boolean isHookLoaded() {
-        return hookLoaded;
     }
 
     /** Checks for the engine library without loading it, so the launcher UI can warn early. */

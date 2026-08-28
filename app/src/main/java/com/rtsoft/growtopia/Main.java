@@ -17,15 +17,6 @@ import android.view.inputmethod.InputMethodManager;
 import com.rtsoft.growtopia.HeightProvider;
 import com.ubisoft.bridge.JavaInterface;
 
-import launcher.powerkuy.growlauncher.api.JNICall;
-import launcher.powerkuy.growlauncher.api.JavaForNative;
-import launcher.powerkuy.growlauncher.luamanager.LuaManager;
-
-import java.net.URLEncoder;
-
-import javax.microedition.khronos.egl.EGLConfig;
-import javax.microedition.khronos.opengles.GL10;
-
 public class Main extends SharedActivity {
     public static boolean OriginalKeyboard = false;
     public static boolean block_pause;
@@ -74,9 +65,12 @@ public class Main extends SharedActivity {
         return true;
     }
 
-    // Native methods declared here (engine expects these on Main class)
-    public static native void nativeOnKey(int state, int virtualKey, int unicodeChar);
-    public static native boolean nativeOnTouch(float x, float y, int action);
+    // NOTE: no nativeOnTouch/nativeOnKey here. libgrowtopia.so does not export
+    // Java_com_rtsoft_growtopia_Main_nativeOnTouch — that symbol comes from the
+    // PowerKuy hook library, which this launcher does not ship. Declaring it made
+    // every touch event throw UnsatisfiedLinkError, which is what stalled the game
+    // on the consent screen after "Play Online". Touch goes to
+    // AppGLSurfaceView.nativeOnTouch and keys to SharedActivity.nativeOnKey.
 
     private void applyImmersiveFullscreen() {
         if (Build.VERSION.SDK_INT >= 30) {
@@ -95,17 +89,9 @@ public class Main extends SharedActivity {
 
     private void handleIntent(Intent intent) {
         if (intent == null) return;
-        String action = intent.getAction();
-        Uri data = intent.getData();
-        if (!"android.intent.action.VIEW".equals(action) || data == null) return;
+        if (!"android.intent.action.VIEW".equals(intent.getAction())) return;
         try {
-            String info = data.getQueryParameter("info");
-            String token = data.getQueryParameter("token");
-            if (info == null) info = "";
-            if (token == null) token = "";
-            JNICall.Companion.notifyValueChanged(5, "google_redirect_callback",
-                "info=" + URLEncoder.encode(info, "UTF-8") +
-                "&token=" + URLEncoder.encode(token, "UTF-8"));
+            HandleDeeplink(intent);
         } catch (Exception e) {
             Log.e("Main", "handleIntent error: " + e.getMessage());
         }
@@ -155,10 +141,6 @@ public class Main extends SharedActivity {
         if (view != null) {
             ((InputMethodManager) activity.getSystemService("input_method")).hideSoftInputFromWindow(view.getWindowToken(), 0);
         }
-    }
-
-    public void initialize(Bundle bundle) {
-        // Placeholder for mod menu or additional UI overlay
     }
 
     @Override
@@ -219,13 +201,7 @@ public class Main extends SharedActivity {
         this.firebaseCrashlyticsManager = new FirebaseCrashlyticsManager(this);
         this.ironSourceManager.OnCreate();
         this.appReviewManager.OnCreate();
-        initialize(savedInstanceState);
         getWindow().addFlags(128); // FLAG_KEEP_SCREEN_ON
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
     }
 
     @Override
@@ -253,29 +229,9 @@ public class Main extends SharedActivity {
 
     @Override
     public void onStop() {
-        if (NativeLibraries.isHookLoaded()) {
-            JavaForNative.shutdown();
-        }
+        // Clears the launch breadcrumb; without it the launcher reports a phantom
+        // native crash on every subsequent start.
+        com.gentz.launcher.CrashLogger.markLaunchFinished();
         super.onStop();
-    }
-
-    // PowerKuyRootRenderer: engine calls into this for the powerkuy overlay
-    public static class PowerKuyRootRenderer implements GLSurfaceView.Renderer {
-        public static native void nativeDrawFrame();
-        public static native int nativeGetMessagePowerKuy();
-        public static native void nativeSurfaceChanged(int width, int height);
-
-        @Override
-        public void onDrawFrame(GL10 gl) {
-            try { nativeDrawFrame(); } catch (UnsatisfiedLinkError e) {}
-        }
-
-        @Override
-        public void onSurfaceChanged(GL10 gl, int width, int height) {
-            try { nativeSurfaceChanged(width, height); } catch (UnsatisfiedLinkError e) {}
-        }
-
-        @Override
-        public void onSurfaceCreated(GL10 gl, EGLConfig config) {}
     }
 }

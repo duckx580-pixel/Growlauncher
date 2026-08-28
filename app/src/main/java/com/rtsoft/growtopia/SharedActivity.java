@@ -54,7 +54,7 @@ import com.tapjoy.TJGetCurrencyBalanceListener;
 import com.tapjoy.TJPlacement;
 import com.tapjoy.TJPlacementVideoListener;
 
-import launcher.powerkuy.App;
+import com.gentz.launcher.App;
 
 import java.io.File;
 import java.io.FileInputStream;

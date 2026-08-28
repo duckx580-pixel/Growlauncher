@@ -37,7 +37,7 @@
     </queries>
 
     <application
-        android:name="launcher.powerkuy.App"
+        android:name="com.gentz.launcher.App"
         android:allowBackup="true"
         android:extractNativeLibs="true"
         android:isGame="true"

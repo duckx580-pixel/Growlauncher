@@ -138,7 +138,7 @@ void handle_signal(int signo, siginfo_t* info, void* context) {
 }  // namespace
 
 extern "C" JNIEXPORT jboolean JNICALL
-Java_launcher_powerkuy_CrashLogger_installNativeHandler(JNIEnv* env, jclass, jstring report_path) {
+Java_com_gentz_launcher_CrashLogger_installNativeHandler(JNIEnv* env, jclass, jstring report_path) {
     const char* path = env->GetStringUTFChars(report_path, nullptr);
     if (path == nullptr) {
         return JNI_FALSE;
@@ -166,7 +166,7 @@ Java_launcher_powerkuy_CrashLogger_installNativeHandler(JNIEnv* env, jclass, jst
 
 // Deliberate crash used to verify the report pipeline on a device without adb.
 extern "C" JNIEXPORT void JNICALL
-Java_launcher_powerkuy_CrashLogger_nativeSelfTest(JNIEnv*, jclass) {
+Java_com_gentz_launcher_CrashLogger_nativeSelfTest(JNIEnv*, jclass) {
     volatile int* invalid = nullptr;
     *invalid = 1;
 }
