@@ -163,6 +163,7 @@ public class Main extends SharedActivity {
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        googleSignInHelper.handleSignInResult(requestCode, resultCode, data);
     }
 
     @Override

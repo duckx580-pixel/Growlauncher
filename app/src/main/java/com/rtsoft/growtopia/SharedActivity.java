@@ -49,6 +49,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.anzu.sdk.Anzu;
 import com.tapjoy.Tapjoy;
+import com.tapjoy.TJConnectListener;
 import com.tapjoy.TJGetCurrencyBalanceListener;
 import com.tapjoy.TJPlacement;
 import com.tapjoy.TJPlacementVideoListener;
@@ -1051,7 +1052,21 @@ public class SharedActivity extends AppCompatActivity implements SensorEventList
     public void requestOfferwallAndShow(String name) {}
     public void requestPlacement(String name) {}
     public void requestPlacementAndShow(String name) {}
-    public void onConnectToTapjoy(String appId) {}
+    public void onConnectToTapjoy(String appId) {
+        java.util.Hashtable<String, String> flags = new java.util.Hashtable<>();
+        flags.put("TJC_OPTION_ENABLE_LOGGING", "false");
+        flags.put("TJC_OPTION_DISABLE_ANDROID_ID_AS_ANALYTICS_ID", "true");
+        Tapjoy.connect(getApplicationContext(), appId, flags, new TJConnectListener() {
+            @Override
+            public void onConnectSuccess() {
+                android.util.Log.d(PackageName, "Tapjoy connect success");
+            }
+            @Override
+            public void onConnectFailure() {
+                android.util.Log.d(PackageName, "Tapjoy connect failed");
+            }
+        });
+    }
     public void onVideoComplete(TJPlacement p) {}
     public void onVideoError(TJPlacement p, String err) {}
     public void onVideoStart(TJPlacement p) {}
