@@ -64,10 +64,6 @@ public class AppRenderer implements GLSurfaceView.Renderer {
 
     static long m_gameTimer;
     static int m_timerLoopMS;
-    // nativeInit() registers a window view inside the engine; calling it a second time
-    // (surface recreated, activity relaunched without process restart) triggers
-    // "View already added to window manager". Guard it to one call per process.
-    private static volatile boolean nativeInitDone = false;
     public SharedActivity app;
     int width;
     int height;
@@ -85,7 +81,6 @@ public class AppRenderer implements GLSurfaceView.Renderer {
     private static native String nativeGetLastOSMessageString3();
     private static native float nativeGetLastOSMessageX();
     private static native float nativeGetLastOSMessageY();
-    private static native void nativeInit();
     private static native int nativeOSMessageGet();
     public static native void nativeRender();
     private static native void nativeResize(int i, int i2, int i3);
@@ -206,10 +201,6 @@ public class AppRenderer implements GLSurfaceView.Renderer {
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         GLES20.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         nativeSetWindow(SharedActivity.mGLView.getHolder().getSurface());
-        if (!nativeInitDone) {
-            nativeInitDone = true;
-            nativeInit();
-        }
         if (SharedActivity.m_advertiserID.equals("")) {
             new Thread(() -> {
                 try {
