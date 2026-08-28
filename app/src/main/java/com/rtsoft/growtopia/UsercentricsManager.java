@@ -3,7 +3,12 @@ package com.rtsoft.growtopia;
 import android.app.Activity;
 import android.util.Log;
 
+import com.usercentrics.sdk.UsercentricsConsentHistoryEntry;
+import com.usercentrics.sdk.UsercentricsServiceConsent;
+import com.usercentrics.sdk.models.settings.UsercentricsConsentType;
+
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class UsercentricsManager {
@@ -18,10 +23,28 @@ public class UsercentricsManager {
     // Native callbacks — called from the UI thread (matches real 5.55 implementation)
     public native void InitFinish(boolean success);
     public native void OnConsentFetchedFail(int code, String message);
-    public native void OnConsentFetchedSuccess(List<Object> list);
+    public native void OnConsentFetchedSuccess(List<UsercentricsServiceConsent> list);
+
+    private List<UsercentricsServiceConsent> buildAcceptedConsentList() {
+        UsercentricsConsentHistoryEntry historyEntry = new UsercentricsConsentHistoryEntry(
+                true, UsercentricsConsentType.EXPLICIT, System.currentTimeMillis());
+        List<UsercentricsConsentHistoryEntry> history = new ArrayList<>();
+        history.add(historyEntry);
+
+        UsercentricsServiceConsent consent = new UsercentricsServiceConsent(
+                "growtopia",   // templateId
+                true,          // status = accepted
+                history,
+                UsercentricsConsentType.EXPLICIT,
+                "Ubisoft",     // dataProcessor
+                "1.0",         // version
+                true,          // isEssential
+                "Essential"    // category
+        );
+        return Collections.singletonList(consent);
+    }
 
     public void InitWithRuleSet(String str) {
-        // Auto-succeed: no Usercentrics SDK, so signal ready immediately on UI thread
         baseContext.runOnUiThread(() -> {
             try { InitFinish(true); } catch (UnsatisfiedLinkError e) {
                 Log.w(TAG, "InitFinish unavailable: " + e.getMessage());
@@ -38,29 +61,28 @@ public class UsercentricsManager {
     }
 
     public void CheckConsentState() {
-        // Auto-accept: deliver empty consent list from UI thread (matches real threading model)
         baseContext.runOnUiThread(() -> {
-            try { OnConsentFetchedSuccess(new ArrayList<>()); } catch (UnsatisfiedLinkError e) {
+            try { OnConsentFetchedSuccess(buildAcceptedConsentList()); } catch (UnsatisfiedLinkError e) {
                 Log.w(TAG, "OnConsentFetchedSuccess unavailable: " + e.getMessage());
             }
         });
     }
 
-    public void FetchUserConsent(List<Object> list) {
+    public void FetchUserConsent(List<UsercentricsServiceConsent> list) {
+        final List<UsercentricsServiceConsent> consents =
+                (list != null && !list.isEmpty()) ? list : buildAcceptedConsentList();
         baseContext.runOnUiThread(() -> {
-            try { OnConsentFetchedSuccess(list != null ? list : new ArrayList<>()); } catch (UnsatisfiedLinkError e) {
+            try { OnConsentFetchedSuccess(consents); } catch (UnsatisfiedLinkError e) {
                 Log.w(TAG, "OnConsentFetchedSuccess unavailable: " + e.getMessage());
             }
         });
     }
 
     public void RequestConsentSettings() {
-        // No real consent UI — auto-accept immediately
         CheckConsentState();
     }
 
     public void ShowConsentSettings() {
-        // No real consent UI — auto-accept immediately
         CheckConsentState();
     }
 }
