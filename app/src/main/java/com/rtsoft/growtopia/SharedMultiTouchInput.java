@@ -89,6 +89,9 @@ public class SharedMultiTouchInput {
         if (action == 1) {
             RemoveFinger(pointerId);
         }
+        try {
+            if (Main.nativeOnTouch(x, y, action)) return;
+        } catch (UnsatisfiedLinkError e) { /* PowerKuy not loaded */ }
         AppGLSurfaceView.nativeOnTouch(action, x, y, finger);
     }
 }
