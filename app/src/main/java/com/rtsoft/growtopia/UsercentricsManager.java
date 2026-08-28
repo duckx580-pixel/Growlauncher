@@ -45,7 +45,9 @@ public class UsercentricsManager {
     }
 
     public void InitWithRuleSet(String str) {
+        Log.d(TAG, "InitWithRuleSet called, ruleSetId=" + str);
         baseContext.runOnUiThread(() -> {
+            Log.d(TAG, "InitWithRuleSet -> calling InitFinish(true)");
             try { InitFinish(true); } catch (UnsatisfiedLinkError e) {
                 Log.w(TAG, "InitFinish unavailable: " + e.getMessage());
             }
@@ -53,7 +55,9 @@ public class UsercentricsManager {
     }
 
     public void InitWithSettings(String str) {
+        Log.d(TAG, "InitWithSettings called, settingsId=" + str);
         baseContext.runOnUiThread(() -> {
+            Log.d(TAG, "InitWithSettings -> calling InitFinish(true)");
             try { InitFinish(true); } catch (UnsatisfiedLinkError e) {
                 Log.w(TAG, "InitFinish unavailable: " + e.getMessage());
             }
@@ -61,7 +65,9 @@ public class UsercentricsManager {
     }
 
     public void CheckConsentState() {
+        Log.d(TAG, "CheckConsentState called");
         baseContext.runOnUiThread(() -> {
+            Log.d(TAG, "CheckConsentState -> calling OnConsentFetchedSuccess");
             try { OnConsentFetchedSuccess(buildAcceptedConsentList()); } catch (UnsatisfiedLinkError e) {
                 Log.w(TAG, "OnConsentFetchedSuccess unavailable: " + e.getMessage());
             }
@@ -69,18 +75,22 @@ public class UsercentricsManager {
     }
 
     public void FetchUserConsent(List<UsercentricsServiceConsent> list) {
+        Log.d(TAG, "FetchUserConsent called, list=" + (list == null ? "null" : "size=" + list.size()));
         List<UsercentricsServiceConsent> consents =
                 (list != null && !list.isEmpty()) ? list : buildAcceptedConsentList();
+        Log.d(TAG, "FetchUserConsent -> calling OnConsentFetchedSuccess with " + consents.size() + " entries");
         try { OnConsentFetchedSuccess(consents); } catch (UnsatisfiedLinkError e) {
             Log.w(TAG, "OnConsentFetchedSuccess unavailable: " + e.getMessage());
         }
     }
 
     public void RequestConsentSettings() {
+        Log.d(TAG, "RequestConsentSettings called -> delegating to CheckConsentState");
         CheckConsentState();
     }
 
     public void ShowConsentSettings() {
+        Log.d(TAG, "ShowConsentSettings called -> delegating to CheckConsentState");
         CheckConsentState();
     }
 }
