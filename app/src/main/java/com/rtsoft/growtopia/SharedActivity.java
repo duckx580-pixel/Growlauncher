@@ -562,14 +562,16 @@ public class SharedActivity extends AppCompatActivity implements SensorEventList
     }
 
     public void toggle_keyboard(boolean show) {
-        InputMethodManager imm = (InputMethodManager) getSystemService("input_method");
-        if (show) {
-            m_editText.requestFocus();
-            imm.showSoftInput(m_editText, InputMethodManager.SHOW_FORCED);
-        } else {
-            imm.hideSoftInputFromWindow(mGLView.getWindowToken(), 0);
-            UpdateEditBoxInView(false, false);
-        }
+        runOnUiThread(() -> {
+            InputMethodManager imm = (InputMethodManager) getSystemService("input_method");
+            if (show) {
+                m_editText.requestFocus();
+                imm.showSoftInput(m_editText, InputMethodManager.SHOW_FORCED);
+            } else {
+                imm.hideSoftInputFromWindow(mGLView.getWindowToken(), 0);
+                UpdateEditBoxInView(false, false);
+            }
+        });
     }
 
     public void UpdateEditBoxInView(boolean show, boolean clear) {

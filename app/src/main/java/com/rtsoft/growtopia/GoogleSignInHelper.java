@@ -12,7 +12,9 @@ public class GoogleSignInHelper {
     public native void OnSignIn(int code, String token);
 
     public void Init() {}
-    public void SignIn() {}
+    public void SignIn() {
+        try { OnSignIn(1, ""); } catch (UnsatisfiedLinkError e) {}
+    }
     public void SignOut() {}
     public void handleSignInResult(int requestCode, int resultCode, android.content.Intent data) {}
 }

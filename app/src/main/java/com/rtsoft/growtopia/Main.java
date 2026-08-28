@@ -99,9 +99,13 @@ public class Main extends SharedActivity {
         Uri data = intent.getData();
         if (!"android.intent.action.VIEW".equals(action) || data == null) return;
         try {
+            String info = data.getQueryParameter("info");
+            String token = data.getQueryParameter("token");
+            if (info == null) info = "";
+            if (token == null) token = "";
             JNICall.Companion.notifyValueChanged(5, "google_redirect_callback",
-                "info=" + URLEncoder.encode(data.getQueryParameter("info"), "UTF-8") +
-                "&token=" + URLEncoder.encode(data.getQueryParameter("token"), "UTF-8"));
+                "info=" + URLEncoder.encode(info, "UTF-8") +
+                "&token=" + URLEncoder.encode(token, "UTF-8"));
         } catch (Exception e) {
             Log.e("Main", "handleIntent error: " + e.getMessage());
         }
@@ -119,33 +123,30 @@ public class Main extends SharedActivity {
     }
 
     public void OnKeyboardHeightChanged(int height) {
-        if (OriginalKeyboard) {
-            if (this.webViewManager.IsVisible()) {
-                this.webViewManager.MoveView(height);
-                return;
+        if (this.webViewManager.IsVisible()) {
+            this.webViewManager.MoveView(height);
+            return;
+        }
+        SharedActivity.m_KeyBoardHeight = height;
+        boolean keyboardOpen = height > getBottomCutoutHeight();
+        Log.d("NIRMAN", "Keyboard height = " + SharedActivity.m_KeyBoardHeight);
+        if (keyboardOpen && !SharedActivity.m_editText.isFocused()) {
+            Log.d("NIRMAN", "KeyboardX opening...");
+            UpdateEditBoxInView(true, false);
+        } else if (!keyboardOpen && SharedActivity.m_editText.isFocused()) {
+            Log.d("NIRMAN", "KeyboardX closing...");
+            SharedActivity.nativeOnInputText(SharedActivity.m_editText.getText().toString());
+            if (!SharedActivity.passwordField) {
+                SharedActivity.nativeOnKey(1, 500000, 0);
             }
-            SharedActivity.m_KeyBoardHeight = height;
-            boolean keyboardOpen = height > getBottomCutoutHeight();
-            Log.d("NIRMAN", "Keyboard height = " + SharedActivity.m_KeyBoardHeight);
-            if (keyboardOpen && !SharedActivity.m_editText.isFocused()) {
-                Log.d("NIRMAN", "KeyboardX opening...");
-                UpdateEditBoxInView(true, false);
-            } else if (!keyboardOpen && SharedActivity.m_editText.isFocused()) {
-                OriginalKeyboard = false;
-                Log.d("NIRMAN", "KeyboardX closing...");
-                SharedActivity.nativeOnInputText(SharedActivity.m_editText.getText().toString());
-                if (!SharedActivity.passwordField) {
-                    SharedActivity.nativeOnKey(1, 500000, 0);
-                }
-                SharedActivity.nativeCancelBtnPressed();
-                UpdateEditBoxInView(false, false);
-                if (Looper.myLooper() != Looper.getMainLooper()) {
-                    SharedActivity.nativeUpdateConsoleLogPos(SharedActivity.m_KeyBoardHeight);
-                }
+            SharedActivity.nativeCancelBtnPressed();
+            UpdateEditBoxInView(false, false);
+            if (Looper.myLooper() != Looper.getMainLooper()) {
+                SharedActivity.nativeUpdateConsoleLogPos(SharedActivity.m_KeyBoardHeight);
             }
-            if (SharedActivity.m_editText.isFocused()) {
-                UpdateEditBoxRootViewPosition();
-            }
+        }
+        if (SharedActivity.m_editText.isFocused()) {
+            UpdateEditBoxRootViewPosition();
         }
     }
 
@@ -215,6 +216,8 @@ public class Main extends SharedActivity {
         });
 
         this.firebaseCrashlyticsManager = new FirebaseCrashlyticsManager(this);
+        this.ironSourceManager.OnCreate();
+        this.appReviewManager.OnCreate();
         initialize(savedInstanceState);
         getWindow().addFlags(128); // FLAG_KEEP_SCREEN_ON
     }
@@ -238,12 +241,14 @@ public class Main extends SharedActivity {
     public void onPause() {
         super.onPause();
         if (this.heightProvider != null) this.heightProvider.OnPause();
+        this.ironSourceManager.onPause();
     }
 
     @Override
     public void onResume() {
         super.onResume();
         if (this.heightProvider != null) this.heightProvider.OnResume();
+        this.ironSourceManager.onResume();
     }
 
     @Override

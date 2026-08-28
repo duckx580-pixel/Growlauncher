@@ -16,7 +16,9 @@ public class AppsFlyerManager {
 
     public String GetAppsFlyerId() { return ""; }
     public void Init(String key) {}
-    public void Start(boolean consent, boolean shouldStart) {}
+    public void Start(boolean consent, boolean shouldStart) {
+        try { nativeOnStarted(0); } catch (UnsatisfiedLinkError e) {}
+    }
     public void LogEvent(String event, String value) {}
     public void LogEvent(String event, Map<String, Object> map) {}
     public void LogPurchase(String a, String b, String c) {}

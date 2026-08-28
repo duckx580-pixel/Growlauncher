@@ -11,7 +11,9 @@ public class IAPManager {
     }
 
     public void IAPPurchase(String str) {}
-    public void RequestAIPPurchasedList() {}
+    public void RequestAIPPurchasedList() {
+        try { SharedActivity.nativeSendGUIEx(45, -1, 0, 0); } catch (Throwable t) {}
+    }
     public void RequestItemDetails(String str) {}
     public void ConsumeItem(String str) {}
 }
