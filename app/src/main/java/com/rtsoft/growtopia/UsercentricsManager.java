@@ -67,8 +67,38 @@ public class UsercentricsManager {
     }
 
     public void InitWithRuleSet(String str) {
+        deliverInitFinish(true);
     }
 
     public void InitWithSettings(String str) {
+        deliverInitFinish(true);
+    }
+
+    /**
+     * Calls InitFinish on the GL thread so the engine's initialization gate is
+     * unblocked. The engine calls InitWithRuleSet/InitWithSettings and then stalls
+     * waiting for this callback; without it the first nativeRender() produces only
+     * a black screen.
+     */
+    private void deliverInitFinish(final boolean success) {
+        final Runnable callback = () -> {
+            try {
+                InitFinish(success);
+            } catch (UnsatisfiedLinkError e) {
+                Log.w(TAG, "InitFinish callback unavailable: " + e.getMessage());
+            } catch (Throwable t) {
+                Log.e(TAG, "InitFinish callback failed: " + t);
+            }
+        };
+        if (!NativeLibraries.isGameLoaded()) {
+            Log.w(TAG, "engine not loaded, dropping InitFinish callback");
+            return;
+        }
+        GLSurfaceView glView = SharedActivity.mGLView;
+        if (glView != null) {
+            glView.queueEvent(callback);
+        } else {
+            new Handler(Looper.getMainLooper()).post(callback);
+        }
     }
 }
