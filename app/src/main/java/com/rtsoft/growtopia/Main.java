@@ -76,7 +76,6 @@ public class Main extends SharedActivity {
 
     // Native methods declared here (engine expects these on Main class)
     public static native void nativeOnKey(int state, int virtualKey, int unicodeChar);
-    public static native boolean nativeOnTouch(float x, float y, int action);
 
     private void applyImmersiveFullscreen() {
         if (Build.VERSION.SDK_INT >= 30) {

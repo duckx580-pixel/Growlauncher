@@ -21,8 +21,8 @@ public class AppGLSurfaceView extends GLSurfaceView {
             setFocusableInTouchMode(true);
             requestFocus();
         }
-        setEGLConfigChooser(8, 8, 8, 8, 24, 8);
-        setPreserveEGLContextOnPause(true);
+        setEGLConfigChooser(8, 8, 8, 8, 16, 0);
+        setPreserveEGLContextOnPause(false);
         AppRenderer renderer = new AppRenderer(this.app);
         try {
             setRenderer(renderer);
@@ -45,8 +45,9 @@ public class AppGLSurfaceView extends GLSurfaceView {
 
     @Override
     public void onPause() {
+        if (SharedActivity.bIsShuttingDown) return;
         super.onPause();
-        if (SharedActivity.bIsShuttingDown || !NativeLibraries.isGameLoaded()) return;
+        if (!NativeLibraries.isGameLoaded()) return;
         nativePause();
     }
 
@@ -59,18 +60,12 @@ public class AppGLSurfaceView extends GLSurfaceView {
     }
 
     @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        super.onTouchEvent(event);
-        if (!NativeLibraries.isGameLoaded()) {
-            return false;
-        }
+    public synchronized boolean onTouchEvent(MotionEvent event) {
+        if (!NativeLibraries.isGameLoaded()) return true;
         if (mMultiTouchClassAvailable) {
             return WrapSharedMultiTouchInput.OnInput(event);
         }
-        if (NativeLibraries.isHookLoaded() && Main.nativeOnTouch(event.getX(), event.getY(), event.getAction())) {
-            return true;
-        }
         nativeOnTouch(event.getAction(), event.getX(), event.getY(), 0);
-        return false;
+        return true;
     }
 }

@@ -561,15 +561,22 @@ public class SharedActivity extends AppCompatActivity implements SensorEventList
         }
     }
 
-    public void toggle_keyboard(boolean show) {
+    public void toggle_keyboard(final boolean show) {
         runOnUiThread(() -> {
-            InputMethodManager imm = (InputMethodManager) getSystemService("input_method");
+            final InputMethodManager imm = (InputMethodManager) getSystemService("input_method");
             if (show) {
-                m_editText.requestFocus();
-                imm.showSoftInput(m_editText, InputMethodManager.SHOW_FORCED);
+                clearIngameInputBox();
+                UpdateEditBoxInView(true, false);
+                m_editText.post(() -> {
+                    if (!imm.showSoftInput(m_editText, InputMethodManager.SHOW_IMPLICIT)) {
+                        imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
+                    }
+                });
+                m_focusOnKeyboard = true;
             } else {
-                imm.hideSoftInputFromWindow(mGLView.getWindowToken(), 0);
+                imm.hideSoftInputFromWindow(m_editText.getWindowToken(), 0);
                 UpdateEditBoxInView(false, false);
+                m_focusOnKeyboard = false;
             }
         });
     }
@@ -935,6 +942,7 @@ public class SharedActivity extends AppCompatActivity implements SensorEventList
             if (mGLView != null) mGLView.onResume();
             if (NativeLibraries.isGameLoaded()) setup_accel(accelHzSave);
             super.onResume();
+            if (iapManager != null) iapManager.RequestAIPPurchasedList();
         }
     }
 
