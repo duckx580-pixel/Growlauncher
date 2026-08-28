@@ -88,7 +88,7 @@ public class AppRenderer implements GLSurfaceView.Renderer {
     private static native void nativeInit();
     private static native int nativeOSMessageGet();
     public static native void nativeRender();
-    public static native void nativeResize(int width, int height);
+    private static native void nativeResize(int i, int i2, int i3);
     public static native void nativeSetWindow(Surface surface);
     public static native void nativeUpdate();
 
@@ -186,10 +186,15 @@ public class AppRenderer implements GLSurfaceView.Renderer {
 
     @Override
     public void onSurfaceChanged(GL10 gl, int w, int h) {
+        int rotation = 1;
+        if (this.app.getResources().getConfiguration().orientation == 2) {
+            int rot = this.app.getWindowManager().getDefaultDisplay().getRotation();
+            if (rot == 1) { rotation = 3; }
+            else if (rot == 3) { rotation = 4; }
+        }
         GLES20.glViewport(0, 0, w, h);
-        // Bind (or rebind) the surface before telling the engine about the new dimensions.
+        nativeResize(w, h, rotation);
         nativeSetWindow(SharedActivity.mGLView.getHolder().getSurface());
-        nativeResize(w, h);
         this.width = w;
         this.height = h;
         if (NativeLibraries.isHookLoaded()) {
@@ -200,11 +205,24 @@ public class AppRenderer implements GLSurfaceView.Renderer {
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         GLES20.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-        // Always rebind the (possibly new) surface, but init the engine only once.
         nativeSetWindow(SharedActivity.mGLView.getHolder().getSurface());
         if (!nativeInitDone) {
             nativeInitDone = true;
             nativeInit();
+        }
+        if (SharedActivity.m_advertiserID.equals("")) {
+            new Thread(() -> {
+                try {
+                    com.google.android.gms.ads.identifier.AdvertisingIdClient.Info info =
+                        com.google.android.gms.ads.identifier.AdvertisingIdClient.getAdvertisingIdInfo(SharedActivity.app);
+                    if (info != null) {
+                        SharedActivity.m_advertiserID = info.getId();
+                        SharedActivity.m_limitAdTracking = info.isLimitAdTrackingEnabled();
+                    }
+                } catch (Throwable t) {
+                    android.util.Log.d(SharedActivity.PackageName, "AID fetch failed: " + t.getMessage());
+                }
+            }).start();
         }
     }
 }
