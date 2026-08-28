@@ -69,13 +69,11 @@ public class UsercentricsManager {
     }
 
     public void FetchUserConsent(List<UsercentricsServiceConsent> list) {
-        final List<UsercentricsServiceConsent> consents =
+        List<UsercentricsServiceConsent> consents =
                 (list != null && !list.isEmpty()) ? list : buildAcceptedConsentList();
-        baseContext.runOnUiThread(() -> {
-            try { OnConsentFetchedSuccess(consents); } catch (UnsatisfiedLinkError e) {
-                Log.w(TAG, "OnConsentFetchedSuccess unavailable: " + e.getMessage());
-            }
-        });
+        try { OnConsentFetchedSuccess(consents); } catch (UnsatisfiedLinkError e) {
+            Log.w(TAG, "OnConsentFetchedSuccess unavailable: " + e.getMessage());
+        }
     }
 
     public void RequestConsentSettings() {

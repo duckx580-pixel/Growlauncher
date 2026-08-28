@@ -226,10 +226,6 @@ public class Main extends SharedActivity {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        // The native engine registers a window overlay and holds static JNI state.
-        // Killing the process here ensures a clean slate on the next launch so
-        // nativeInit() / nativeInitActivity() never see stale state.
-        android.os.Process.killProcess(android.os.Process.myPid());
     }
 
     @Override
@@ -257,7 +253,6 @@ public class Main extends SharedActivity {
 
     @Override
     public void onStop() {
-        launcher.powerkuy.CrashLogger.markLaunchFinished();
         if (NativeLibraries.isHookLoaded()) {
             JavaForNative.shutdown();
         }
