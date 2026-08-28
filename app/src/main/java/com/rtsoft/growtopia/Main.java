@@ -170,8 +170,12 @@ public class Main extends SharedActivity {
         SharedActivity.securityEnabled = false;
         SharedActivity.IAPEnabled = true;
         SharedActivity.HookedEnabled = false;
-        SharedActivity.PackageName = getPackageName();
-        SharedActivity.GameVersionName = BuildConfig.VERSION_NAME;
+        // Deliberately NOT getPackageName(): the real Growlauncher sets this to the
+        // Growtopia application id, and it decides which APK the engine mounts for
+        // its GameData. Overwriting it with the launcher id made the engine look in
+        // the wrong package, and made sendVersionDetails() report the launcher
+        // version to the server instead of the game version.
+        SharedActivity.PackageName = SharedActivity.GROWTOPIA_PACKAGE;
         NativeLibraries.loadGame();
 
         // The engine can ask for the consent manager from its first frame, so it has to

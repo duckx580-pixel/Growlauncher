@@ -115,8 +115,11 @@ public class SharedActivity extends AppCompatActivity implements SensorEventList
     static final int MESSAGE_TYPE_UNKNOWN = 21;
     static final int MESSAGE_TYPE_VIBRATE = 16;
     static final int MESSAGE_USER = 1000;
-    public static String PackageName = "com.rtsoft.growtopia";
-    public static String GameVersionName = BuildConfig.VERSION_NAME;
+    /** The game package the engine and its assets belong to — never the launcher's own id. */
+    public static final String GROWTOPIA_PACKAGE = "com.rtsoft.growtopia";
+    public static String PackageName = GROWTOPIA_PACKAGE;
+    /** Version of the bundled libgrowtopia.so; only a fallback for sendVersionDetails(). */
+    public static String GameVersionName = com.gentz.launcher.LauncherConfig.GROWTOPIA_VERSION;
     static final int RC_REQUEST = 10001;
     static final int RESULT_BILLING_UNAVAILABLE = 3;
     static final int RESULT_DEVELOPER_ERROR = 5;
@@ -267,10 +270,12 @@ public class SharedActivity extends AppCompatActivity implements SensorEventList
     }
 
     public static String get_apkFileName() {
-        // Prefer the official Growtopia APK so assets always match whatever version is installed.
+        // PackageName is com.rtsoft.growtopia: this launcher ships only override assets
+        // (StartScreen, WorldUI, items.dat, menu.json) and mounts the installed Growtopia
+        // APK for the ~2900 GameData files, exactly like the real Growlauncher does.
         // Fall back to our own bundled assets only if Growtopia is not installed.
         try {
-            return app.getPackageManager().getApplicationInfo("com.rtsoft.growtopia", 0).sourceDir;
+            return app.getPackageManager().getApplicationInfo(PackageName, 0).sourceDir;
         } catch (PackageManager.NameNotFoundException e) {
             try {
                 return app.getPackageManager().getApplicationInfo(app.getPackageName(), 0).sourceDir;
@@ -686,10 +691,27 @@ public class SharedActivity extends AppCompatActivity implements SensorEventList
         }
     }
 
+    /**
+     * Reports the CLIENT GAME version to the engine (GUI message 47).
+     *
+     * This must be the Growtopia version, not the launcher version: the engine
+     * compares it against the version the server requires, and a mismatch leaves
+     * the session stuck once the player tries to go online. Both the official
+     * 5.55 client and the real Growlauncher read it from the installed
+     * com.rtsoft.growtopia package, so do the same and only fall back to the
+     * bundled engine version when Growtopia is not installed.
+     */
     public void sendVersionDetails() {
         if (!NativeLibraries.isGameLoaded()) return;
+        String version;
         try {
-            nativeSendGUIStringEx(47, 0, 0, 0, GameVersionName);
+            version = getPackageManager().getPackageInfo(GROWTOPIA_PACKAGE, 0).versionName;
+        } catch (PackageManager.NameNotFoundException e) {
+            Log.d(PackageName, "Cannot load App Version, using bundled engine version");
+            version = GameVersionName;
+        }
+        try {
+            nativeSendGUIStringEx(47, 0, 0, 0, version);
         } catch (Throwable t) {
             Log.e(PackageName, "sendVersionDetails error: " + t.getMessage());
         }
