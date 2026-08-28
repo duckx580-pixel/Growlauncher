@@ -54,6 +54,8 @@ public class UsercentricsManager {
         }
     }
 
+    public native void InitFinish(boolean success);
+
     public native void OnConsentFetchedFail(int i10, String str);
 
     public native void OnConsentFetchedSuccess(List<Object> list);
