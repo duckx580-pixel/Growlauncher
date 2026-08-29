@@ -224,6 +224,9 @@ public class Main extends SharedActivity {
         this.ironSourceManager.OnCreate();
         this.appReviewManager.OnCreate();
         getWindow().addFlags(128); // FLAG_KEEP_SCREEN_ON
+
+        // Handle grow:// redirect if the activity was cold-started by the OAuth callback.
+        handleIntent(getIntent());
     }
 
     @Override

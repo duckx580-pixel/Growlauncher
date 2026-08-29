@@ -2,7 +2,10 @@ package com.rtsoft.growtopia;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.net.Uri;
 import android.util.Log;
+
+import androidx.browser.customtabs.CustomTabsIntent;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
@@ -16,8 +19,11 @@ import android.opengl.GLSurfaceView;
 public class GoogleSignInHelper {
     private static final String TAG = "GoogleSignInHelper";
     private static final int RC_SIGN_IN = 1;
-    private static final String SERVER_CLIENT_ID =
-        "389994132396-4s6ol46f60831v5blfpci7lnmsdnh8br.apps.googleusercontent.com";
+
+    // CSTS web OAuth URL — opens Ubisoft's login page which handles Google sign-in
+    // server-side and redirects back to grow://growtopia?info=...&token=...
+    private static final String CSTS_LOGIN_URL =
+        "https://csts-mob.ubi.com/index.php?platform=android&language=en&country=US&iap=1";
 
     Activity mainActivity;
     private GoogleSignInClient mGoogleSignInClient;
@@ -31,16 +37,27 @@ public class GoogleSignInHelper {
     public void Init() {}
 
     public void SignIn() {
-        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken(SERVER_CLIENT_ID)
-            .requestEmail()
-            .build();
-        mGoogleSignInClient = GoogleSignIn.getClient(mainActivity, gso);
-        // Sign out first so the account chooser always appears
-        mGoogleSignInClient.signOut().addOnCompleteListener(task -> {
-            Intent signInIntent = mGoogleSignInClient.getSignInIntent();
-            mainActivity.startActivityForResult(signInIntent, RC_SIGN_IN);
-        });
+        // Open Ubisoft's CSTS web login page via Chrome Custom Tab.
+        // The page handles Google OAuth server-side, then redirects to
+        // grow://growtopia?info=...&token=... which Main.handleIntent() catches
+        // and passes to NativeAppInterface.OnDeepLinkProcess("info=...&token=...").
+        // This bypasses native Google Sign-In Error 10 (DEVELOPER_ERROR) which
+        // occurs because our package is not registered in Ubisoft's Google Cloud project.
+        try {
+            CustomTabsIntent customTab = new CustomTabsIntent.Builder()
+                    .setShareState(CustomTabsIntent.SHARE_STATE_OFF)
+                    .build();
+            customTab.intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
+            customTab.launchUrl(mainActivity, Uri.parse(CSTS_LOGIN_URL));
+        } catch (Exception e) {
+            Log.e(TAG, "CustomTab launch failed, falling back to ACTION_VIEW: " + e.getMessage());
+            try {
+                Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(CSTS_LOGIN_URL));
+                mainActivity.startActivity(browserIntent);
+            } catch (Exception e2) {
+                Log.e(TAG, "Browser fallback also failed: " + e2.getMessage());
+            }
+        }
     }
 
     public void SignOut() {
