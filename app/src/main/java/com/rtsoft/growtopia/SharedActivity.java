@@ -343,7 +343,12 @@ public class SharedActivity extends AppCompatActivity implements SensorEventList
     }
 
     public static String get_language() {
-        return Locale.getDefault().getLanguage().toLowerCase();
+        Locale locale = Locale.getDefault();
+        String country = locale.getCountry();
+        if (country.isEmpty()) {
+            country = "US"; // UbiServices requires BCP 47 format: "en-US", not "en"
+        }
+        return locale.getLanguage().toLowerCase() + "-" + country.toUpperCase();
     }
 
     public static String get_macAddress() {
