@@ -17,6 +17,8 @@ import android.view.inputmethod.InputMethodManager;
 import com.rtsoft.growtopia.HeightProvider;
 import com.ubisoft.bridge.JavaInterface;
 
+import java.net.URLEncoder;
+
 public class Main extends SharedActivity {
     public static boolean OriginalKeyboard = false;
     public static boolean block_pause;
@@ -91,7 +93,22 @@ public class Main extends SharedActivity {
         if (intent == null) return;
         if (!"android.intent.action.VIEW".equals(intent.getAction())) return;
         try {
-            HandleDeeplink(intent);
+            Uri data = intent.getData();
+            if (data == null) return;
+            String info = data.getQueryParameter("info");
+            String token = data.getQueryParameter("token");
+            if (info != null || token != null) {
+                // UbiConnect/CSTS OAuth redirect: grow://growtopia?info=...&token=...
+                // Pass to engine using the same "info=...&token=..." format PowerKuy uses.
+                final String payload = "info=" + URLEncoder.encode(info != null ? info : "")
+                        + "&token=" + URLEncoder.encode(token != null ? token : "");
+                Log.d("Main", "CSTS redirect received, payload=" + payload);
+                if (mGLView != null) {
+                    mGLView.post(() -> NativeAppInterface.OnDeepLinkProcess(payload));
+                }
+            } else {
+                HandleDeeplink(intent);
+            }
         } catch (Exception e) {
             Log.e("Main", "handleIntent error: " + e.getMessage());
         }
