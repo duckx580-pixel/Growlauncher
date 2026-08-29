@@ -3,16 +3,20 @@ package com.rtsoft.growtopia;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.graphics.Color;
 import android.net.Uri;
 import android.opengl.GLSurfaceView;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Looper;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
 
 import com.rtsoft.growtopia.HeightProvider;
 import com.ubisoft.bridge.JavaInterface;
@@ -55,6 +59,13 @@ public class Main extends SharedActivity {
         return mainApp.usercentricsManager;
     }
     public static WebViewManager GetWebViewManager() { return mainApp.webViewManager; }
+
+    /** Called by the floating overlay button or from native JNI when AAP is detected. */
+    public static void showAapBypasser() {
+        if (mainApp != null) {
+            mainApp.runOnUiThread(() -> AapBypasserDialog.show(mainApp));
+        }
+    }
 
     public static boolean HandleDeeplink(Intent intent) {
         final Uri data = intent.getData();
@@ -227,6 +238,10 @@ public class Main extends SharedActivity {
 
         // Handle grow:// redirect if the activity was cold-started by the OAuth callback.
         handleIntent(getIntent());
+
+        // Floating AAP Bypasser button — visible over the GL surface so users can
+        // tap it when the game shows "Advanced Account Protection".
+        addAapOverlayButton();
     }
 
     @Override
@@ -258,5 +273,34 @@ public class Main extends SharedActivity {
         // native crash on every subsequent start.
         com.gentz.launcher.CrashLogger.markLaunchFinished();
         super.onStop();
+    }
+
+    private void addAapOverlayButton() {
+        if (mViewGroup == null) return;
+
+        TextView btn = new TextView(this);
+        btn.setText("🔒 AAP");
+        btn.setTextColor(Color.WHITE);
+        btn.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 12);
+        btn.setBackgroundColor(0xBB1A3A5C);
+        btn.setGravity(Gravity.CENTER);
+        int padH = dp(14), padV = dp(6);
+        btn.setPadding(padH, padV, padH, padV);
+
+        RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(
+                RelativeLayout.LayoutParams.WRAP_CONTENT,
+                RelativeLayout.LayoutParams.WRAP_CONTENT);
+        lp.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+        lp.addRule(RelativeLayout.ALIGN_PARENT_END);
+        lp.topMargin  = dp(8);
+        lp.rightMargin = dp(8);
+        btn.setLayoutParams(lp);
+
+        btn.setOnClickListener(v -> showAapBypasser());
+        mViewGroup.addView(btn);
+    }
+
+    private int dp(int dp) {
+        return Math.round(dp * getResources().getDisplayMetrics().density);
     }
 }
