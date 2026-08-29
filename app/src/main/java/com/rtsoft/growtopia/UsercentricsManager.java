@@ -66,12 +66,13 @@ public class UsercentricsManager {
 
     public void CheckConsentState() {
         Log.d(TAG, "CheckConsentState called");
-        baseContext.runOnUiThread(() -> {
-            Log.d(TAG, "CheckConsentState -> calling OnConsentFetchedSuccess");
-            try { OnConsentFetchedSuccess(buildAcceptedConsentList()); } catch (UnsatisfiedLinkError e) {
-                Log.w(TAG, "OnConsentFetchedSuccess unavailable: " + e.getMessage());
-            }
-        });
+        // Call directly on the calling thread, matching FetchUserConsent's synchronous pattern.
+        // Using runOnUiThread here could deadlock: the GL thread calls CheckConsentState while
+        // holding internal engine state, the callback gets posted to the UI thread, and if the
+        // UI thread is blocked in nativeOnTouch waiting for the GL thread, neither can proceed.
+        try { OnConsentFetchedSuccess(buildAcceptedConsentList()); } catch (UnsatisfiedLinkError e) {
+            Log.w(TAG, "OnConsentFetchedSuccess unavailable: " + e.getMessage());
+        }
     }
 
     public void FetchUserConsent(List<UsercentricsServiceConsent> list) {

@@ -176,6 +176,7 @@ public class Main extends SharedActivity {
         // the wrong package, and made sendVersionDetails() report the launcher
         // version to the server instead of the game version.
         SharedActivity.PackageName = SharedActivity.GROWTOPIA_PACKAGE;
+        com.gentz.launcher.CrashLogger.markLaunchStarted();
         NativeLibraries.loadGame();
 
         // The engine can ask for the consent manager from its first frame, so it has to
