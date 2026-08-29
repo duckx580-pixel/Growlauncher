@@ -11,6 +11,7 @@ import java.util.UUID;
 public class App extends Application {
     public static App f10088p;
     private static SharedPreferences prefs;
+    private static Context growtopiaContext;
 
     @Override
     public void onCreate() {
@@ -21,7 +22,15 @@ public class App extends Application {
     }
 
     public static AssetManager a() {
-        return f10088p.getAssets();
+        try {
+            if (growtopiaContext == null) {
+                growtopiaContext = f10088p.createPackageContext(
+                        "com.rtsoft.growtopia", Context.CONTEXT_INCLUDE_CODE);
+            }
+            return growtopiaContext.getAssets();
+        } catch (Exception e) {
+            return f10088p.getAssets();
+        }
     }
 
     public static String getData(String key) {

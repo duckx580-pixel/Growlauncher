@@ -82,7 +82,7 @@ public class AppRenderer implements GLSurfaceView.Renderer {
     private static native float nativeGetLastOSMessageY();
     private static native int nativeOSMessageGet();
     public static native void nativeRender();
-    private static native void nativeResize(int i, int i2, int i3);
+    public static native void nativeResize(int i, int i2);
     public static native void nativeSetWindow(Surface surface);
     public static native void nativeUpdate();
 
@@ -167,17 +167,11 @@ public class AppRenderer implements GLSurfaceView.Renderer {
 
     @Override
     public void onSurfaceChanged(GL10 gl, int w, int h) {
-        int rotation = 1;
-        if (this.app.getResources().getConfiguration().orientation == 2) {
-            int rot = this.app.getWindowManager().getDefaultDisplay().getRotation();
-            if (rot == 1) { rotation = 3; }
-            else if (rot == 3) { rotation = 4; }
-        }
         GLES20.glViewport(0, 0, w, h);
-        nativeResize(w, h, rotation);
-        nativeSetWindow(SharedActivity.mGLView.getHolder().getSurface());
+        nativeResize(w, h);
         this.width = w;
         this.height = h;
+        nativeSetWindow(SharedActivity.mGLView.getHolder().getSurface());
     }
 
     @Override
