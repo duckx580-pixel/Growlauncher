@@ -19,6 +19,10 @@
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Required for AccountManager to read stored Google accounts (Google Sign-In) -->
+    <uses-permission android:name="android.permission.GET_ACCOUNTS" />
+    <!-- Allows reading our own process logs to detect AAP messages -->
+    <uses-permission android:name="android.permission.READ_LOGS" />
 
     <!-- Required on Android 11+ to query the official Growtopia APK for game assets -->
     <queries>

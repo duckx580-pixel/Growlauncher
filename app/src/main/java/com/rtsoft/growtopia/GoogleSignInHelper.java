@@ -16,13 +16,14 @@ import java.util.UUID;
  * Google Cloud project.
  *
  * Primary path  – Android AccountManager with "audience:server:client_id:"
- *   scope.  This goes through Google Play Services directly using the user's
- *   already-stored Google account and returns a real OpenID Connect ID token
- *   for the specified audience.  No SHA-1 / package registration required.
+ *   scope.  Returns a real OpenID Connect ID token via Google Play Services.
+ *   No SHA-1 / package registration needed.
  *
- * Fallback path – WebView with Chrome UA spoofing + manual header override to
- *   bypass Google's WebView block.  Gets the Growtopia session token from
- *   login.growtopiagame.com and passes it to OnSignIn as a last resort.
+ * Fallback path – WebView using response_type=id_token (implicit grant).
+ *   The ID token lands in the redirect URL fragment (#id_token=...) and is
+ *   extracted before the Growtopia server page ever loads.  This avoids the
+ *   "wrong token type" freeze caused by the previous code/flow approach which
+ *   got a Growtopia session token instead of a Google ID token.
  */
 public class GoogleSignInHelper {
     private static final String TAG = "GoogleSignInHelper";
@@ -39,6 +40,10 @@ public class GoogleSignInHelper {
 
     Activity mainActivity;
 
+    // Saved from RC_ACCOUNT_PICKER so RC_AUTH_CONSENT can retry fetchIdToken
+    // even when the consent activity doesn't return KEY_ACCOUNT_NAME.
+    private String pendingAccountName = null;
+
     public GoogleSignInHelper(Activity activity) {
         this.mainActivity = activity;
     }
@@ -49,9 +54,6 @@ public class GoogleSignInHelper {
 
     // ── Entry point called by the native engine ────────────────────────────
     public void SignIn() {
-        // Show the standard Android "Choose a Google account" picker.
-        // newChooseAccountIntent does NOT require GET_ACCOUNTS or a registered
-        // OAuth client – it just asks the user which stored account to use.
         try {
             @SuppressWarnings("deprecation")
             Intent picker = AccountManager.newChooseAccountIntent(
@@ -68,11 +70,10 @@ public class GoogleSignInHelper {
 
     // ── AccountManager token fetch ─────────────────────────────────────────
     private void fetchIdToken(String accountName) {
+        pendingAccountName = accountName;
         AccountManager am = AccountManager.get(mainActivity);
         Account account = new Account(accountName, "com.google");
 
-        // "audience:server:client_id:<id>" returns an OpenID Connect id_token
-        // whose aud claim equals CLIENT_ID – exactly what OnSignIn expects.
         am.getAuthToken(
             account,
             "audience:server:client_id:" + CLIENT_ID,
@@ -86,13 +87,12 @@ public class GoogleSignInHelper {
                         Log.d(TAG, "AccountManager returned Google ID token");
                         deliverResult(0, token);
                     } else {
-                        // Google Play Services needs explicit user consent first
                         Intent authIntent = result.getParcelable(AccountManager.KEY_INTENT);
                         if (authIntent != null) {
                             mainActivity.runOnUiThread(() ->
                                 mainActivity.startActivityForResult(authIntent, RC_AUTH_CONSENT));
                         } else {
-                            Log.w(TAG, "No token and no consent intent – falling back");
+                            Log.w(TAG, "No token and no consent intent – falling back to WebView");
                             startWebSignIn();
                         }
                     }
@@ -101,19 +101,24 @@ public class GoogleSignInHelper {
                     startWebSignIn();
                 }
             },
-            null   // handler – null = callback on main thread
+            null
         );
     }
 
-    // ── WebView fallback ───────────────────────────────────────────────────
+    // ── WebView fallback – uses response_type=id_token ────────────────────
+    // The ID token is returned in the URL fragment (#id_token=...) so we
+    // never need to process the Growtopia server's response body.  The engine
+    // needs a real Google ID token, not a Growtopia session token.
     private void startWebSignIn() {
         try {
+            String nonce = UUID.randomUUID().toString().replace("-", "");
             String state = UUID.randomUUID().toString().replace("-", "");
             String url = "https://accounts.google.com/o/oauth2/v2/auth"
                 + "?client_id=" + CLIENT_ID
                 + "&redirect_uri=" + URLEncoder.encode(REDIRECT_URI, "utf-8")
-                + "&response_type=code"
+                + "&response_type=id_token"
                 + "&scope=" + URLEncoder.encode("openid profile email", "utf-8")
+                + "&nonce=" + nonce
                 + "&state=" + state;
             Intent intent = new Intent(mainActivity, GoogleWebSignInActivity.class);
             intent.putExtra("url", url);
@@ -136,22 +141,30 @@ public class GoogleSignInHelper {
                     return;
                 }
             }
-            // Picker cancelled or returned no account → try WebView
             Log.d(TAG, "Account picker cancelled – trying WebView");
             startWebSignIn();
             return;
         }
 
         if (requestCode == RC_AUTH_CONSENT) {
-            if (resultCode == Activity.RESULT_OK && data != null) {
-                // User just granted consent; KEY_ACCOUNT_NAME may be present
-                String name = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
+            if (resultCode == Activity.RESULT_OK) {
+                // Prefer the account name we saved from RC_ACCOUNT_PICKER – the
+                // consent activity often does NOT return KEY_ACCOUNT_NAME, so
+                // relying on it caused a silent fall-through to WebView.
+                String name = null;
+                if (data != null) {
+                    name = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
+                }
+                if ((name == null || name.isEmpty()) && pendingAccountName != null) {
+                    name = pendingAccountName;
+                }
                 if (name != null && !name.isEmpty()) {
+                    Log.d(TAG, "Consent granted – retrying fetchIdToken for: " + name);
                     fetchIdToken(name);
                     return;
                 }
             }
-            Log.d(TAG, "Auth consent denied or incomplete – trying WebView");
+            Log.d(TAG, "Auth consent denied – trying WebView");
             startWebSignIn();
             return;
         }
@@ -160,10 +173,9 @@ public class GoogleSignInHelper {
             if (resultCode == Activity.RESULT_OK && data != null) {
                 String token = data.getStringExtra(GoogleWebSignInActivity.EXTRA_TOKEN);
                 Log.d(TAG, "WebView sign-in token length=" + (token != null ? token.length() : 0));
-                // Growtopia session token from login.growtopiagame.com
                 deliverResult(0, token != null ? token : "");
             } else {
-                Log.d(TAG, "WebView sign-in cancelled");
+                Log.d(TAG, "WebView sign-in cancelled or failed");
                 deliverResult(-1, "");
             }
         }

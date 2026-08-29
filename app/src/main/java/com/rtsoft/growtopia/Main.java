@@ -18,6 +18,9 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+
 import com.rtsoft.growtopia.HeightProvider;
 import com.ubisoft.bridge.JavaInterface;
 
@@ -239,9 +242,12 @@ public class Main extends SharedActivity {
         // Handle grow:// redirect if the activity was cold-started by the OAuth callback.
         handleIntent(getIntent());
 
-        // Floating AAP Bypasser button — visible over the GL surface so users can
-        // tap it when the game shows "Advanced Account Protection".
+        // Floating AAP Bypasser button — tap when you see the AAP message.
         addAapOverlayButton();
+
+        // Background thread that watches our process log for the AAP message
+        // and shows the dialog automatically.
+        startAapLogMonitor();
     }
 
     @Override
@@ -273,6 +279,44 @@ public class Main extends SharedActivity {
         // native crash on every subsequent start.
         com.gentz.launcher.CrashLogger.markLaunchFinished();
         super.onStop();
+    }
+
+    /**
+     * Watches our own process's logcat for the "Advanced Account Protection"
+     * string that libgrowtopia.so prints when the server blocks the login.
+     * Shows the AAP Bypasser dialog automatically when detected.
+     * READ_LOGS is declared but not strictly required — Android 7+ allows apps
+     * to read their own PID's logs without it.
+     */
+    private void startAapLogMonitor() {
+        Thread t = new Thread(() -> {
+            try {
+                String pid = String.valueOf(android.os.Process.myPid());
+                Process proc = Runtime.getRuntime().exec(new String[]{
+                    "logcat", "--pid=" + pid, "-T", "0", "*:V"
+                });
+                BufferedReader reader = new BufferedReader(
+                        new InputStreamReader(proc.getInputStream()), 8192);
+                String line;
+                boolean shown = false;
+                while ((line = reader.readLine()) != null) {
+                    if (!shown && (line.contains("Advanced Account Protection")
+                            || line.contains("AdvancedAccountProtection")
+                            || line.contains("new Device and IP"))) {
+                        shown = true;
+                        Log.d("AapMonitor", "AAP detected in log – showing bypasser");
+                        showAapBypasser();
+                        // Reset after 60 s so it can trigger again on re-login
+                        try { Thread.sleep(60_000); } catch (InterruptedException ignored) {}
+                        shown = false;
+                    }
+                }
+            } catch (Exception e) {
+                Log.w("AapMonitor", "Log monitor stopped: " + e.getMessage());
+            }
+        }, "AapLogMonitor");
+        t.setDaemon(true);
+        t.start();
     }
 
     private void addAapOverlayButton() {
