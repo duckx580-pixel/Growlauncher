@@ -74,10 +74,11 @@
 
         <activity
             android:name="com.rtsoft.growtopia.Main"
-            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize|density|navigation|navigationHidden|fontScale|uiMode|touchscreen"
             android:exported="true"
             android:hardwareAccelerated="true"
             android:launchMode="singleTask"
+            android:alwaysRetainTaskState="true"
             android:screenOrientation="sensorLandscape"
             android:windowSoftInputMode="adjustNothing"
             android:theme="@style/Theme.Growlauncher.Game">
@@ -94,13 +95,13 @@
             android:exported="true"
             android:excludeFromRecents="true"
             android:screenOrientation="sensorLandscape"
-            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize|density"
             android:windowSoftInputMode="adjustNothing" />
 
         <activity
             android:name="com.rtsoft.growtopia.PermissionActivity"
             android:screenOrientation="sensorLandscape"
-            android:configChanges="keyboardHidden|orientation|screenSize" />
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize|density" />
 
         <activity
             android:name="com.rtsoft.growtopia.CSTSWebViewActivity"
@@ -168,6 +169,15 @@
         <meta-data
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
+
+        <!-- Firebase Cloud Messaging service (stub – receives engine push callbacks) -->
+        <service
+            android:name="com.rtsoft.growtopia.MyFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
 
     </application>
 

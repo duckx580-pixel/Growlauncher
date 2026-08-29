@@ -149,9 +149,18 @@ public class AapBypasserDialog {
                 save.setTextColor(Color.WHITE);
                 save.setBackgroundColor(0xFF555555);
                 save.setOnClickListener(v -> {
-                    String mac = macInput.getText().toString().trim();
+                    // Normalize: strip colons/hyphens so the engine always gets
+                    // the 12-char no-colon format that get_macAddress() returns.
+                    String mac = macInput.getText().toString().trim()
+                            .replace(":", "").replace("-", "").toLowerCase();
                     if (mac.isEmpty()) {
                         Toast.makeText(context, "Please enter a MAC address", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    if (mac.length() != 12 || !mac.matches("[0-9a-f]+")) {
+                        Toast.makeText(context,
+                                "Enter a valid MAC (12 hex digits or xx:xx:xx:xx:xx:xx)",
+                                Toast.LENGTH_SHORT).show();
                         return;
                     }
                     saveMac(mac);
@@ -176,7 +185,10 @@ public class AapBypasserDialog {
             SharedPreferences prefs =
                     App.f10088p.getSharedPreferences("launcher_data", Context.MODE_PRIVATE);
             String mac = prefs.getString("mac", null);
-            return mac != null ? mac : "";
+            if (mac == null || mac.length() != 12) return mac != null ? mac : "";
+            // Display in colon-separated form for readability
+            return mac.substring(0, 2) + ":" + mac.substring(2, 4) + ":" + mac.substring(4, 6)
+                    + ":" + mac.substring(6, 8) + ":" + mac.substring(8, 10) + ":" + mac.substring(10, 12);
         } catch (Exception e) {
             return "";
         }
