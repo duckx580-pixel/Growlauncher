@@ -100,6 +100,7 @@ public class Main extends SharedActivity {
             if (info != null || token != null) {
                 // UbiConnect/CSTS OAuth redirect: grow://growtopia?info=...&token=...
                 // Pass to engine using the same "info=...&token=..." format PowerKuy uses.
+                googleSignInHelper.onWebSignInCallbackReceived();
                 final String payload = "info=" + URLEncoder.encode(info != null ? info : "")
                         + "&token=" + URLEncoder.encode(token != null ? token : "");
                 Log.d("Main", "CSTS redirect received, payload=" + payload);
@@ -247,6 +248,11 @@ public class Main extends SharedActivity {
         super.onResume();
         if (this.heightProvider != null) this.heightProvider.OnResume();
         this.ironSourceManager.onResume();
+        // If the Chrome Custom Tab closed without delivering a grow:// callback,
+        // the user canceled — tell the engine so it doesn't hang on the login screen.
+        if (GoogleSignInHelper.webSignInPending) {
+            googleSignInHelper.onWebSignInCanceled();
+        }
     }
 
     @Override
