@@ -74,7 +74,7 @@
 
         <activity
             android:name="com.rtsoft.growtopia.Main"
-            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize|density|navigation|navigationHidden|fontScale|uiMode|touchscreen"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize|density|navigation|fontScale|uiMode|touchscreen"
             android:exported="true"
             android:hardwareAccelerated="true"
             android:launchMode="singleTask"
