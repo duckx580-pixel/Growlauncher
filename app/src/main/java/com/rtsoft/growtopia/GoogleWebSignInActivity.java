@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
@@ -54,6 +55,10 @@ public class GoogleWebSignInActivity extends Activity {
         }
 
         webView = new WebView(this);
+        // Disable hardware acceleration to prevent Chrome GPU process SIGSEGV (null ptr in
+        // Chrome_InProcGp) that occurs when the WebView renderer initialises its GPU context
+        // while the game's OpenGL surface is already active on the same device.
+        webView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
@@ -196,8 +201,14 @@ public class GoogleWebSignInActivity extends Activity {
     @Override
     protected void onDestroy() {
         if (webView != null) {
+            webView.stopLoading();
+            webView.setWebViewClient(null);
             webView.destroy();
             webView = null;
+        }
+        if (!finished) {
+            finished = true;
+            setResult(RESULT_CANCELED);
         }
         super.onDestroy();
     }

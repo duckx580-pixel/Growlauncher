@@ -18,6 +18,7 @@ public class UsercentricsManager {
 
     private Activity baseContext;
     private final Handler uiHandler = new Handler(Looper.getMainLooper());
+    private volatile boolean consentDelivered = false;
 
     public UsercentricsManager(Activity activity) {
         this.baseContext = activity;
@@ -69,11 +70,11 @@ public class UsercentricsManager {
 
     public void CheckConsentState() {
         Log.d(TAG, "CheckConsentState called");
-        // Post via Handler so this always returns before the callback fires, regardless of
-        // which thread the engine called us from. The real Usercentrics SDK posts to the UI
-        // thread too (via runOnUiThread + isReady() async). The engine sets its "waiting for
-        // consent" state AFTER CheckConsentState() returns, so a synchronous callback fires
-        // before that state exists and the engine stays stuck.
+        if (consentDelivered) {
+            Log.d(TAG, "CheckConsentState: consent already delivered, skipping duplicate call");
+            return;
+        }
+        consentDelivered = true;
         List<UsercentricsServiceConsent> consents = buildAcceptedConsentList();
         uiHandler.post(() -> {
             Log.d(TAG, "CheckConsentState -> calling OnConsentFetchedSuccess");
