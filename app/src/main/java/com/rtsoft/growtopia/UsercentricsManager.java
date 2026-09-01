@@ -1,6 +1,8 @@
 package com.rtsoft.growtopia;
 
 import android.app.Activity;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 import com.usercentrics.sdk.UsercentricsConsentHistoryEntry;
@@ -15,6 +17,7 @@ public class UsercentricsManager {
     private static final String TAG = "UsercentricsManager";
 
     private Activity baseContext;
+    private final Handler uiHandler = new Handler(Looper.getMainLooper());
 
     public UsercentricsManager(Activity activity) {
         this.baseContext = activity;
@@ -46,7 +49,7 @@ public class UsercentricsManager {
 
     public void InitWithRuleSet(String str) {
         Log.d(TAG, "InitWithRuleSet called, ruleSetId=" + str);
-        baseContext.runOnUiThread(() -> {
+        uiHandler.post(() -> {
             Log.d(TAG, "InitWithRuleSet -> calling InitFinish(true)");
             try { InitFinish(true); } catch (UnsatisfiedLinkError e) {
                 Log.w(TAG, "InitFinish unavailable: " + e.getMessage());
@@ -56,7 +59,7 @@ public class UsercentricsManager {
 
     public void InitWithSettings(String str) {
         Log.d(TAG, "InitWithSettings called, settingsId=" + str);
-        baseContext.runOnUiThread(() -> {
+        uiHandler.post(() -> {
             Log.d(TAG, "InitWithSettings -> calling InitFinish(true)");
             try { InitFinish(true); } catch (UnsatisfiedLinkError e) {
                 Log.w(TAG, "InitFinish unavailable: " + e.getMessage());
@@ -66,13 +69,18 @@ public class UsercentricsManager {
 
     public void CheckConsentState() {
         Log.d(TAG, "CheckConsentState called");
-        // Call directly on the calling thread, matching FetchUserConsent's synchronous pattern.
-        // Using runOnUiThread here could deadlock: the GL thread calls CheckConsentState while
-        // holding internal engine state, the callback gets posted to the UI thread, and if the
-        // UI thread is blocked in nativeOnTouch waiting for the GL thread, neither can proceed.
-        try { OnConsentFetchedSuccess(buildAcceptedConsentList()); } catch (UnsatisfiedLinkError e) {
-            Log.w(TAG, "OnConsentFetchedSuccess unavailable: " + e.getMessage());
-        }
+        // Post via Handler so this always returns before the callback fires, regardless of
+        // which thread the engine called us from. The real Usercentrics SDK posts to the UI
+        // thread too (via runOnUiThread + isReady() async). The engine sets its "waiting for
+        // consent" state AFTER CheckConsentState() returns, so a synchronous callback fires
+        // before that state exists and the engine stays stuck.
+        List<UsercentricsServiceConsent> consents = buildAcceptedConsentList();
+        uiHandler.post(() -> {
+            Log.d(TAG, "CheckConsentState -> calling OnConsentFetchedSuccess");
+            try { OnConsentFetchedSuccess(consents); } catch (UnsatisfiedLinkError e) {
+                Log.w(TAG, "OnConsentFetchedSuccess unavailable: " + e.getMessage());
+            }
+        });
     }
 
     public void FetchUserConsent(List<UsercentricsServiceConsent> list) {
