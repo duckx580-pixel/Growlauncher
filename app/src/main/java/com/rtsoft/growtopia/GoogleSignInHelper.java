@@ -54,18 +54,12 @@ public class GoogleSignInHelper {
 
     // ── Entry point called by the native engine ────────────────────────────
     public void SignIn() {
-        try {
-            @SuppressWarnings("deprecation")
-            Intent picker = AccountManager.newChooseAccountIntent(
-                null, null,
-                new String[]{"com.google"},
-                null, null, null, null
-            );
-            mainActivity.startActivityForResult(picker, RC_ACCOUNT_PICKER);
-        } catch (Exception e) {
-            Log.w(TAG, "AccountManager picker unavailable – falling back to WebView: " + e.getMessage());
-            startWebSignIn();
-        }
+        // Skip AccountManager: the 'audience:server:client_id' token it returns
+        // uses the old iss="accounts.google.com" format that Growtopia's server
+        // rejects with Error: 10.  The WebView implicit flow (response_type=id_token)
+        // produces a modern JWT (iss="https://accounts.google.com") that the server
+        // accepts, same as what the real Google Sign-In SDK returns.
+        startWebSignIn();
     }
 
     // ── AccountManager token fetch ─────────────────────────────────────────
